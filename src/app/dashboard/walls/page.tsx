@@ -4,12 +4,21 @@ import {
   Plus,
   Search,
   SlidersHorizontal,
-  MapPin,
-  MoreHorizontal,
   PanelsTopLeft,
 } from 'lucide-react'
 
-export default function WallsPage() {
+export const instant = false
+
+type WallsPageProps = {
+  searchParams: Promise<{
+    success?: string
+  }>
+}
+
+export default async function WallsPage({ searchParams }: WallsPageProps) {
+  const params = await searchParams
+  const success = params.success
+
   return (
     <main className="min-h-screen bg-[#111111] p-8 text-white">
       {/* Page heading */}
@@ -28,11 +37,21 @@ export default function WallsPage() {
           </p>
         </div>
 
-        <button className="flex items-center justify-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed28]">
+        <Link
+          href="/dashboard/walls/new"
+          className="flex items-center justify-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed28]"
+        >
           <Plus size={18} />
           Add New Wall
-        </button>
+        </Link>
       </div>
+
+      {/* Success notification */}
+      {success && (
+        <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 px-5 py-4 text-sm text-green-400">
+          {success}
+        </div>
+      )}
 
       {/* Statistics */}
       <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -54,7 +73,7 @@ export default function WallsPage() {
         ))}
       </div>
 
-      {/* Wall list */}
+      {/* Registered walls */}
       <section className="rounded-xl border border-white/10 bg-[#1B1B1B]">
         <div className="flex flex-col justify-between gap-4 border-b border-white/10 p-6 lg:flex-row lg:items-center">
           <div>
@@ -74,7 +93,10 @@ export default function WallsPage() {
               />
             </div>
 
-            <button className="flex items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-300 transition hover:bg-white/5">
+            <button
+              type="button"
+              className="flex items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-300 transition hover:bg-white/5"
+            >
               <SlidersHorizontal size={16} />
               Filters
             </button>
@@ -87,17 +109,21 @@ export default function WallsPage() {
             <PanelsTopLeft size={30} />
           </div>
 
-          <h3 className="text-lg font-bold">No walls registered yet</h3>
+          <h3 className="text-lg font-bold">
+            Wall registration successful!
+          </h3>
 
           <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">
-            Your registered advertising locations will appear here.
-            Start by adding your first wall to WallTrack.
+            Your wall has been saved. We'll display your registered walls here.
           </p>
 
-          <button className="mt-6 flex items-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed28]">
+          <Link
+            href="/dashboard/walls/new"
+            className="mt-6 flex items-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed28]"
+          >
             <Plus size={17} />
-            Register First Wall
-          </button>
+            Register Another Wall
+          </Link>
         </div>
       </section>
     </main>
