@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   LayoutGrid,
   RefreshCw,
+  Eye,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
@@ -465,9 +466,18 @@ async function WallsContent({
 
                       <div className="flex shrink-0 flex-wrap items-center gap-3">
                         <Link
-                          href={`/dashboard/map?wall=${wall.id}`}
-                          className="rounded-lg border border-white/10 px-4 py-2 text-xs font-medium text-gray-300 transition hover:border-[#E7FF3C] hover:text-[#E7FF3C]"
+                          href={`/dashboard/walls/${wall.id}`}
+                          className="inline-flex items-center gap-2 rounded-lg bg-[#E7FF3C] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#d6ed32]"
                         >
+                          <Eye size={15} />
+                          View Details
+                        </Link>
+
+                        <Link
+                          href={`/dashboard/map?wall=${wall.id}`}
+                          className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-xs font-medium text-gray-300 transition hover:border-[#E7FF3C] hover:text-[#E7FF3C]"
+                        >
+                          <MapPin size={15} />
                           View on Map
                         </Link>
                       </div>
