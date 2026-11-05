@@ -10,6 +10,7 @@ import {
   Mail,
   CalendarDays,
   Plus,
+  ArrowUpRight,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
@@ -48,7 +49,6 @@ async function EmployeesContent() {
     redirect('/login')
   }
 
-  // Check whether the current user is an admin.
   const { data: currentProfile } = await supabase
     .from('profiles')
     .select('role')
@@ -59,7 +59,6 @@ async function EmployeesContent() {
     redirect('/dashboard')
   }
 
-  // Load all employee profiles.
   const {
     data: employeeData,
     error: employeeError,
@@ -95,7 +94,6 @@ async function EmployeesContent() {
         <Topbar email={user.email ?? 'Admin'} />
 
         <main className="p-6 lg:p-8">
-          {/* Page heading */}
           <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
               <p className="text-xs font-semibold tracking-[0.2em] text-[#E7FF3C]">
@@ -120,7 +118,6 @@ async function EmployeesContent() {
             </Link>
           </div>
 
-          {/* Summary cards */}
           <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-[#1B1B1B] p-6">
               <div className="flex items-center justify-between">
@@ -174,7 +171,6 @@ async function EmployeesContent() {
             </div>
           </div>
 
-          {/* Employee directory */}
           <section className="overflow-hidden rounded-xl border border-white/10 bg-[#1B1B1B]">
             <div className="border-b border-white/10 p-6">
               <h2 className="text-lg font-bold">
@@ -182,7 +178,7 @@ async function EmployeesContent() {
               </h2>
 
               <p className="mt-1 text-sm text-gray-500">
-                View registered team members and their account details.
+                Select an employee to view their profile and account details.
               </p>
             </div>
 
@@ -214,8 +210,9 @@ async function EmployeesContent() {
             ) : (
               <div className="divide-y divide-white/10">
                 {employees.map((employee) => (
-                  <div
+                  <Link
                     key={employee.id}
+                    href={`/dashboard/employees/${employee.id}`}
                     className="flex flex-col justify-between gap-4 p-6 transition hover:bg-white/[0.03] sm:flex-row sm:items-center"
                   >
                     <div className="flex min-w-0 items-center gap-4">
@@ -240,7 +237,7 @@ async function EmployeesContent() {
                       </div>
                     </div>
 
-                    <div className="flex items-center sm:justify-end">
+                    <div className="flex items-center justify-between gap-4 sm:justify-end">
                       <span
                         className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
                           employee.role === 'admin'
@@ -250,8 +247,13 @@ async function EmployeesContent() {
                       >
                         {employee.role}
                       </span>
+
+                      <ArrowUpRight
+                        size={18}
+                        className="text-gray-500"
+                      />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
