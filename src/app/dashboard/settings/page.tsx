@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react'
 import { connection } from 'next/server'
 import { redirect } from 'next/navigation'
@@ -26,6 +27,7 @@ async function SettingsContent() {
   await connection()
 
   const supabase = await createClient()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -57,7 +59,7 @@ async function SettingsContent() {
       title: 'Roles & Permissions',
       description: 'Manage employee roles and access permissions.',
       icon: ShieldCheck,
-      href: '/dashboard/settings/permissions',
+      href: '/dashboard/settings/roles',
     },
     {
       title: 'System Preferences',
