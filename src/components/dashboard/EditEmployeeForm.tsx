@@ -20,12 +20,15 @@ export default function EditEmployeeForm({
   const router = useRouter()
 
   const [fullName, setFullName] = useState(employee.full_name)
+  const [email, setEmail] = useState(employee.email)
   const [role, setRole] = useState(employee.role)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault()
 
     setLoading(true)
@@ -41,6 +44,7 @@ export default function EditEmployeeForm({
         body: JSON.stringify({
           id: employee.id,
           full_name: fullName,
+          email,
           role,
         }),
       })
@@ -94,13 +98,16 @@ export default function EditEmployeeForm({
 
         <input
           type="email"
-          value={employee.email}
-          disabled
-          className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-[#181818]/60 px-4 py-3 text-gray-500 outline-none"
+          required
+          maxLength={254}
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="w-full rounded-xl border border-white/10 bg-[#181818] px-4 py-3 text-white outline-none transition focus:border-[#E7FF3C]"
+          placeholder="Enter employee's email address"
         />
 
         <p className="mt-2 text-xs text-gray-500">
-          Email address changes will be handled separately.
+          Updating this address also updates the employee's login email.
         </p>
       </div>
 
@@ -123,6 +130,13 @@ export default function EditEmployeeForm({
         </p>
       </div>
 
+      <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+        <p className="text-sm text-yellow-400">
+          Please double-check the new email address. It will be used
+          for the employee's account login.
+        </p>
+      </div>
+
       {error && (
         <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
           {error}
@@ -137,7 +151,7 @@ export default function EditEmployeeForm({
 
       <button
         type="submit"
-        disabled={loading || !fullName.trim()}
+        disabled={loading || !fullName.trim() || !email.trim()}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#E7FF3C] px-5 py-3 font-semibold text-black transition hover:bg-[#d6ee32] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         {loading ? (

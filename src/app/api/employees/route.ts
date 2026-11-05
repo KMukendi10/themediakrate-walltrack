@@ -122,6 +122,11 @@ export async function PATCH(request: Request) {
     const fullName =
       typeof body.full_name === 'string' ? body.full_name.trim() : ''
 
+    const email =
+      typeof body.email === 'string'
+        ? body.email.trim().toLowerCase()
+        : ''
+
     const role = body.role
 
     if (!employeeId) {
@@ -134,6 +139,16 @@ export async function PATCH(request: Request) {
     if (!fullName || fullName.length > 100) {
       return NextResponse.json(
         { error: 'Enter a valid full name (maximum 100 characters).' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      email.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      return NextResponse.json(
+        { error: 'Enter a valid email address.' },
         { status: 400 }
       )
     }
@@ -155,7 +170,7 @@ export async function PATCH(request: Request) {
     const { data: existingEmployee, error: employeeError } =
       await auth.supabase
         .from('profiles')
-        .select('id, email')
+        .select('id, email, full_name')
         .eq('id', employeeId)
         .single()
 
@@ -168,8 +183,10 @@ export async function PATCH(request: Request) {
 
     const admin = createAdminClient()
 
+    // Update the employee's Supabase Authentication account.
     const { error: authUpdateError } =
       await admin.auth.admin.updateUserById(employeeId, {
+        email,
         user_metadata: {
           full_name: fullName,
         },
@@ -182,16 +199,26 @@ export async function PATCH(request: Request) {
       )
     }
 
+    // Keep the employee profile in sync with Authentication.
     const { error: profileUpdateError } = await auth.supabase
       .from('profiles')
       .update({
         full_name: fullName,
+        email,
         role,
         updated_at: new Date().toISOString(),
       })
       .eq('id', employeeId)
 
     if (profileUpdateError) {
+      // Attempt to restore Authentication if the profile update fails.
+      await admin.auth.admin.updateUserById(employeeId, {
+        email: existingEmployee.email,
+        user_metadata: {
+          full_name: existingEmployee.full_name,
+        },
+      })
+
       return NextResponse.json(
         { error: profileUpdateError.message },
         { status: 400 }
@@ -200,6 +227,12 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       message: 'Employee details updated successfully.',
+      employee: {
+        id: employeeId,
+        full_name: fullName,
+        email,
+        role,
+      },
     })
   } catch (error) {
     console.error('Employee update error:', error)
