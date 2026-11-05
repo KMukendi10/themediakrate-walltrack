@@ -7,10 +7,10 @@ import {
   ClipboardCheck,
   Plus,
   CalendarDays,
-  MapPin,
   UserRound,
   AlertTriangle,
   CheckCircle2,
+  ArrowRight,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
@@ -280,12 +280,13 @@ async function InspectionsContent() {
                   const condition = inspection.condition.toLowerCase()
 
                   return (
-                    <div
+                    <Link
                       key={inspection.id}
-                      className="p-6 transition hover:bg-white/[0.02]"
+                      href={`/dashboard/inspections/${inspection.id}`}
+                      className="block p-6 transition hover:bg-white/[0.04] group"
                     >
                       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="text-sm font-semibold text-white">
                               {wall?.name ?? 'Unknown Wall'}
@@ -311,22 +312,29 @@ async function InspectionsContent() {
                           </div>
 
                           {inspection.notes && (
-                            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-400">
+                            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-400 line-clamp-2">
                               {inspection.notes}
                             </p>
                           )}
                         </div>
 
-                        <span
-                          className={`inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
-                            conditionStyles[condition] ??
-                            'bg-gray-500/10 text-gray-400'
-                          }`}
-                        >
-                          {inspection.condition}
-                        </span>
+                        <div className="flex items-center justify-between gap-4 sm:justify-end">
+                          <span
+                            className={`inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
+                              conditionStyles[condition] ??
+                              'bg-gray-500/10 text-gray-400'
+                            }`}
+                          >
+                            {inspection.condition}
+                          </span>
+
+                          <ArrowRight
+                            size={18}
+                            className="text-gray-500 transition group-hover:translate-x-1 group-hover:text-[#E7FF3C]"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
