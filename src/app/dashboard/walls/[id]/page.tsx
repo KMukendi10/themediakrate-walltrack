@@ -1,4 +1,3 @@
-
 import { Suspense } from 'react'
 import { connection } from 'next/server'
 import { redirect, notFound } from 'next/navigation'
@@ -12,6 +11,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
+  Pencil,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
@@ -258,13 +258,23 @@ async function WallDetailsContent({
               </p>
             </div>
 
-            <Link
-              href={`/dashboard/map?wall=${wall.id}`}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm font-medium text-gray-300 transition hover:border-[#E7FF3C] hover:text-[#E7FF3C]"
-            >
-              <MapPin size={17} />
-              View on Map
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={`/dashboard/walls/${wall.id}/edit`}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#E7FF3C] px-4 py-3 text-sm font-semibold text-black transition hover:bg-[#d4ec32]"
+              >
+                <Pencil size={17} />
+                Edit Wall
+              </Link>
+
+              <Link
+                href={`/dashboard/map?wall=${wall.id}`}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm font-medium text-gray-300 transition hover:border-[#E7FF3C] hover:text-[#E7FF3C]"
+              >
+                <MapPin size={17} />
+                View on Map
+              </Link>
+            </div>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
