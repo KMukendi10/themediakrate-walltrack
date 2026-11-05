@@ -66,7 +66,6 @@ async function NewInspectionPageContent() {
             ) : (
               <NewInspectionForm
                 walls={walls ?? []}
-                userId={user.id}
               />
             )}
           </div>

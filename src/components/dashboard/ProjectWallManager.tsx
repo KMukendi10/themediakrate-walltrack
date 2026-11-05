@@ -79,14 +79,15 @@ export default function ProjectWallManager({
     setSaving(true)
     setMessage('')
 
-    const { error } = await supabase.from('wall_projects').insert({
-      wall_id: selectedWall,
-      project_id: projectId,
+    const response = await fetch(`/api/projects/${projectId}/walls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wall_id: selectedWall }),
     })
+    const result = await response.json()
 
-    if (error) {
-      console.error('Wall assignment error:', error)
-      setMessage('Unable to assign this wall. Please try again.')
+    if (!response.ok) {
+      setMessage(result.error ?? 'Unable to assign this wall. Please try again.')
       setSaving(false)
       return
     }
@@ -108,14 +109,14 @@ export default function ProjectWallManager({
     setRemovingId(assignmentId)
     setMessage('')
 
-    const { error } = await supabase
-      .from('wall_projects')
-      .delete()
-      .eq('id', assignmentId)
+    const response = await fetch(
+      `/api/projects/${projectId}/walls?assignment_id=${encodeURIComponent(assignmentId)}`,
+      { method: 'DELETE' }
+    )
+    const result = await response.json()
 
-    if (error) {
-      console.error('Wall removal error:', error)
-      setMessage('Unable to remove this wall. Please try again.')
+    if (!response.ok) {
+      setMessage(result.error ?? 'Unable to remove this wall. Please try again.')
       setRemovingId('')
       return
     }

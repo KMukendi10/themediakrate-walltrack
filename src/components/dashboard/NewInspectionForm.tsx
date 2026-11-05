@@ -3,7 +3,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import {
   Camera,
   X,
@@ -23,7 +22,6 @@ type Wall = {
 
 type Props = {
   walls: Wall[]
-  userId: string
 }
 
 const conditions = [
@@ -34,9 +32,8 @@ const conditions = [
   { value: 'damaged', label: 'Damaged', description: 'Wall has visible damage.' },
 ]
 
-export default function NewInspectionForm({ walls, userId }: Props) {
+export default function NewInspectionForm({ walls }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [wallId, setWallId] = useState('')
   const [condition, setCondition] = useState('good')
@@ -105,48 +102,22 @@ export default function NewInspectionForm({ walls, userId }: Props) {
     setLoading(true)
 
     try {
-      const { data: inspection, error: inspectionError } = await supabase
-        .from('inspections')
-        .insert({
-          wall_id: wallId,
-          condition,
-          inspection_date: inspectionDate,
-          notes: notes.trim() || null,
-          inspected_by: userId,
-        })
-        .select('id')
-        .single()
+      const payload = new FormData()
+      payload.set('wall_id', wallId)
+      payload.set('condition', condition)
+      payload.set('inspection_date', inspectionDate)
+      payload.set('notes', notes.trim())
+      photos.forEach((photo) => payload.append('photos', photo))
 
-      if (inspectionError) throw inspectionError
+      setUploadProgress('Saving inspection and uploading photos...')
+      const response = await fetch('/api/inspections', {
+        method: 'POST',
+        body: payload,
+      })
+      const result = await response.json()
 
-      for (let index = 0; index < photos.length; index++) {
-        const photo = photos[index]
-        const extension = photo.name.split('.').pop()?.toLowerCase() || 'jpg'
-        const filePath = `${wallId}/${inspection.id}/${Date.now()}-${index}.${extension}`
-
-        setUploadProgress(`Uploading photo ${index + 1} of ${photos.length}...`)
-
-        const { error: uploadError } = await supabase.storage
-          .from('wall-photos')
-          .upload(filePath, photo, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: photo.type,
-          })
-
-        if (uploadError) throw uploadError
-
-        const { error: photoError } = await supabase
-          .from('wall_photos')
-          .insert({
-            wall_id: wallId,
-            image_path: filePath,
-            photo_type: 'inspection',
-            caption: `Inspection photo - ${inspectionDate}`,
-            uploaded_by: userId,
-          })
-
-        if (photoError) throw photoError
+      if (!response.ok) {
+        throw new Error(result.error ?? 'Unable to save inspection.')
       }
 
       router.push('/dashboard/inspections?success=Inspection%20recorded%20successfully')

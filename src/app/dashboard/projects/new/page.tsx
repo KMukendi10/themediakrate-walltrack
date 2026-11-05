@@ -77,20 +77,22 @@ export default function NewProjectPage() {
 
     setSaving(true)
 
-    const { error: insertError } = await supabase
-      .from('projects')
-      .insert({
+    const response = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         project_name: form.project_name.trim(),
         client_id: form.client_id || null,
         description: form.description.trim() || null,
         status: form.status,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
-      })
+      }),
+    })
+    const result = await response.json()
 
-    if (insertError) {
-      console.error('Project creation error:', insertError.message)
-      setError('Unable to create project. Please check the details and try again.')
+    if (!response.ok) {
+      setError(result.error ?? 'Unable to create project. Please try again.')
       setSaving(false)
       return
     }

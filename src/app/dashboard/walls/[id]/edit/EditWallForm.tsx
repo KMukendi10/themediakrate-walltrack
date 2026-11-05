@@ -229,9 +229,10 @@ export default function EditWallForm({ wallId }: Props) {
 
     setSaving(true)
 
-    const { error: updateError } = await supabase
-      .from('walls')
-      .update({
+    const response = await fetch(`/api/walls/${wallId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         name: form.name.trim(),
         description: form.description.trim() || null,
         wall_type: form.wall_type || null,
@@ -247,13 +248,12 @@ export default function EditWallForm({ wallId }: Props) {
         width_m: width,
         height_m: height,
         status: form.status,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', wallId)
+      }),
+    })
+    const result = await response.json()
 
-    if (updateError) {
-      console.error('Wall update error:', updateError)
-      setError('Unable to update this wall. ' + updateError.message)
+    if (!response.ok) {
+      setError(result.error ?? 'Unable to update this wall.')
       setSaving(false)
       return
     }

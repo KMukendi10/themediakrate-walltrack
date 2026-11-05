@@ -153,21 +153,22 @@ export default function EditProjectForm({ projectId }: Props) {
 
     setSaving(true)
 
-    const { error: updateError } = await supabase
-      .from('projects')
-      .update({
+    const response = await fetch(`/api/projects/${project.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         project_name: formData.project_name.trim(),
         client_id: formData.client_id || null,
         description: formData.description.trim() || null,
         status: formData.status,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
-      })
-      .eq('id', project.id)
+      }),
+    })
+    const result = await response.json()
 
-    if (updateError) {
-      console.error('Project update error:', updateError)
-      setError('Unable to update project. Please try again.')
+    if (!response.ok) {
+      setError(result.error ?? 'Unable to update project. Please try again.')
       setSaving(false)
       return
     }
