@@ -1,5 +1,8 @@
 
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Map,
@@ -50,6 +53,8 @@ const navigation = [
 ]
 
 export default function Sidebar() {
+  const pathname = usePathname()
+
   return (
     <aside className="flex min-h-screen w-64 flex-col border-r border-white/10 bg-[#171717] px-5 py-6">
       <div className="mb-12 flex items-center gap-3">
@@ -79,7 +84,14 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white"
+              aria-current={pathname === item.href ? 'page' : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition hover:bg-white/5 hover:text-white ${
+                pathname === item.href ||
+                (item.href !== '/dashboard' &&
+                  pathname.startsWith(`${item.href}/`))
+                  ? 'bg-[#E7FF3C]/10 text-[#E7FF3C]'
+                  : 'text-gray-400'
+              }`}
             >
               <Icon size={18} />
               <span>{item.title}</span>

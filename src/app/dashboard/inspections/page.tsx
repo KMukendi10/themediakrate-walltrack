@@ -16,6 +16,8 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import { getUserDatePreferences } from '@/lib/user-date-preferences'
+import { formatAppDate } from '@/lib/date-format'
 
 type Inspection = {
   id: string
@@ -69,6 +71,7 @@ async function InspectionsContent() {
   if (authError || !user) {
     redirect('/login')
   }
+  const datePreferences = await getUserDatePreferences(supabase, user.id)
 
   const {
     data: inspectionData,
@@ -132,13 +135,6 @@ async function InspectionsContent() {
       inspection.condition.toLowerCase()
     )
   ).length
-
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
 
   return (
     <div className="flex min-h-screen bg-[#111111] text-white">
@@ -302,7 +298,7 @@ async function InspectionsContent() {
                           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
                             <span className="flex items-center gap-2">
                               <CalendarDays size={14} />
-                              {formatDate(inspection.inspection_date)}
+                              {formatAppDate(inspection.inspection_date, datePreferences)}
                             </span>
 
                             <span className="flex items-center gap-2">

@@ -21,6 +21,29 @@ export async function POST(request: Request) {
     )
   }
 
+  if (project.client_id) {
+    const { data: client, error: clientError } = await auth.supabase
+      .from('clients')
+      .select('id')
+      .eq('id', project.client_id)
+      .maybeSingle()
+
+    if (clientError) {
+      console.error('Project client lookup error:', clientError)
+      return NextResponse.json(
+        { error: 'Unable to verify the selected client.' },
+        { status: 500 }
+      )
+    }
+
+    if (!client) {
+      return NextResponse.json(
+        { error: 'The selected client no longer exists. Choose another client.' },
+        { status: 404 }
+      )
+    }
+  }
+
   const { data, error } = await auth.supabase
     .from('projects')
     .insert(project)

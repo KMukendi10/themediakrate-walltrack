@@ -1,28 +1,22 @@
 import { NextResponse } from 'next/server'
 import { authorizeRoles } from '@/lib/supabase/authorization'
-
-const allowedConditions = ['excellent', 'good', 'fair', 'poor', 'damaged']
-const allowedPhotoTypes = new Map([
-  ['image/jpeg', 'jpg'],
-  ['image/png', 'png'],
-  ['image/webp', 'webp'],
-])
-const maxPhotoSize = 10 * 1024 * 1024
-
-function isValidDate(value: string) {
-  return (
-    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    !Number.isNaN(Date.parse(`${value}T00:00:00`)) &&
-    new Date(`${value}T00:00:00`).toISOString().slice(0, 10) === value
-  )
-}
+import { isValidInspectionSubmission } from '@/lib/validation/inspection'
 
 async function rollbackInspection(
   supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
   inspectionId: string,
   uploadedPaths: string[]
-) {
+): Promise<boolean> {
   if (uploadedPaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from('wall-photos')
+      .remove(uploadedPaths)
+
+    if (storageError) {
+      console.error('Inspection photo storage rollback error:', storageError)
+      return false
+    }
+
     const { error: metadataError } = await supabase
       .from('wall_photos')
       .delete()
@@ -30,14 +24,7 @@ async function rollbackInspection(
 
     if (metadataError) {
       console.error('Inspection photo metadata rollback error:', metadataError)
-    }
-
-    const { error: storageError } = await supabase.storage
-      .from('wall-photos')
-      .remove(uploadedPaths)
-
-    if (storageError) {
-      console.error('Inspection photo storage rollback error:', storageError)
+      return false
     }
   }
 
@@ -48,12 +35,16 @@ async function rollbackInspection(
 
   if (error) {
     console.error('Inspection record rollback error:', error)
+    return false
   }
+
+  return true
 }
 
 export async function POST(request: Request) {
   const auth = await authorizeRoles(['admin', 'employee'])
   if (!auth.authorized) return auth.response
+  const supabase = auth.supabase
 
   let formData: FormData
   try {
@@ -71,21 +62,17 @@ export async function POST(request: Request) {
   const notes = formData.get('notes')
   const photos = formData.getAll('photos')
 
+  const photoInputs = photos.map((photo) =>
+    photo instanceof File ? { type: photo.type, size: photo.size } : null
+  )
   if (
-    typeof wallId !== 'string' ||
-    !wallId ||
-    typeof condition !== 'string' ||
-    !allowedConditions.includes(condition) ||
-    typeof inspectionDate !== 'string' ||
-    !isValidDate(inspectionDate) ||
-    typeof notes !== 'string' ||
-    notes.length > 5000 ||
-    photos.some((photo) => !(photo instanceof File)) ||
-    photos.some(
-      (photo) =>
-        photo instanceof File &&
-        (!allowedPhotoTypes.has(photo.type) || photo.size > maxPhotoSize)
-    )
+    !isValidInspectionSubmission({
+      wallId,
+      condition,
+      inspectionDate,
+      notes,
+      photos: photoInputs,
+    })
   ) {
     return NextResponse.json(
       { error: 'Please provide valid inspection details and photos.' },
@@ -93,7 +80,8 @@ export async function POST(request: Request) {
     )
   }
 
-  const { data: wall, error: wallError } = await auth.supabase
+  const notesText = typeof notes === 'string' ? notes.trim() : ''
+  const { data: wall, error: wallError } = await supabase
     .from('walls')
     .select('id')
     .eq('id', wallId)
@@ -111,19 +99,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Selected wall not found.' }, { status: 404 })
   }
 
-  const { data: inspection, error: inspectionError } = await auth.supabase
+  const { data: inspection, error: inspectionError } = await supabase
     .from('inspections')
     .insert({
       wall_id: wallId,
       condition,
       inspection_date: inspectionDate,
-      notes: notes.trim() || null,
+      notes: notesText || null,
       inspected_by: auth.user.id,
     })
     .select('id')
     .single()
 
-  if (inspectionError) {
+  if (inspectionError || !inspection) {
     console.error('Inspection creation error:', inspectionError)
     return NextResponse.json(
       { error: 'Unable to save inspection.' },
@@ -131,16 +119,46 @@ export async function POST(request: Request) {
     )
   }
 
+  const inspectionId = inspection.id
   const uploadedPaths: string[] = []
+
+  async function failAfterPartialSave(message: string) {
+    const cleanedUp = await rollbackInspection(
+      supabase,
+      inspectionId,
+      uploadedPaths
+    )
+
+    return NextResponse.json(
+      {
+        error: cleanedUp
+          ? message
+          : `The submission could not be completed and automatic cleanup was incomplete. Check inspection ${inspectionId} and its photos before retrying.`,
+        inspectionId: cleanedUp ? undefined : inspectionId,
+      },
+      { status: 500 }
+    )
+  }
 
   for (const [index, item] of photos.entries()) {
     if (!(item instanceof File)) continue
 
-    const extension = allowedPhotoTypes.get(item.type)
-    if (!extension) continue
+    const extension =
+      item.type === 'image/jpeg'
+        ? 'jpg'
+        : item.type === 'image/png'
+          ? 'png'
+          : item.type === 'image/webp'
+            ? 'webp'
+            : null
+    if (!extension) {
+      return await failAfterPartialSave(
+        'An uploaded photo has an unsupported file type. Please use JPEG, PNG, or WebP.'
+      )
+    }
 
-    const filePath = `${wallId}/${inspection.id}/${crypto.randomUUID()}.${extension}`
-    const { error: uploadError } = await auth.supabase.storage
+    const filePath = `${wallId}/${inspectionId}/${crypto.randomUUID()}.${extension}`
+    const { error: uploadError } = await supabase.storage
       .from('wall-photos')
       .upload(filePath, item, {
         cacheControl: '3600',
@@ -149,16 +167,14 @@ export async function POST(request: Request) {
       })
 
     if (uploadError) {
-      console.error(`Inspection photo ${index + 1} upload error:`, uploadError)
-      await rollbackInspection(auth.supabase, inspection.id, uploadedPaths)
-      return NextResponse.json(
-        { error: 'A photo could not be uploaded. The inspection was not saved.' },
-        { status: 500 }
+      console.error(`Inspection ${inspectionId} photo ${index + 1} upload error:`, uploadError)
+      return failAfterPartialSave(
+        'A photo could not be uploaded. The inspection was not saved; check the selected files and try again.'
       )
     }
 
     uploadedPaths.push(filePath)
-    const { error: photoError } = await auth.supabase
+    const { error: photoError } = await supabase
       .from('wall_photos')
       .insert({
         wall_id: wallId,
@@ -170,13 +186,11 @@ export async function POST(request: Request) {
 
     if (photoError) {
       console.error(`Inspection photo ${index + 1} record error:`, photoError)
-      await rollbackInspection(auth.supabase, inspection.id, uploadedPaths)
-      return NextResponse.json(
-        { error: 'A photo could not be recorded. The inspection was not saved.' },
-        { status: 500 }
+      return failAfterPartialSave(
+        'A photo record could not be saved. The inspection was not saved; check the selected files and try again.'
       )
     }
   }
 
-  return NextResponse.json({ id: inspection.id }, { status: 201 })
+  return NextResponse.json({ id: inspectionId }, { status: 201 })
 }

@@ -1,25 +1,11 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-const allowedDateFormats = ['DD/MM/YYYY', 'MM/DD/YYYY']
-
-const allowedTimezones = [
-  'Africa/Johannesburg',
-  'UTC',
-  'Europe/London',
-  'America/New_York',
-  'America/Los_Angeles',
-  'Asia/Dubai',
-]
-
-const allowedDashboardPages = [
-  '/dashboard',
-  '/dashboard/walls',
-  '/dashboard/map',
-  '/dashboard/projects',
-  '/dashboard/inspections',
-]
+import {
+  SUPPORTED_DATE_FORMATS,
+  SUPPORTED_TIMEZONES,
+} from '@/lib/date-format'
+import { SUPPORTED_DASHBOARD_PAGES } from '@/lib/dashboard-preferences'
 
 export async function PUT(request: Request) {
   try {
@@ -45,21 +31,32 @@ export async function PUT(request: Request) {
       email_notifications,
     } = body
 
-    if (!allowedDateFormats.includes(date_format)) {
+    if (
+      typeof date_format !== 'string' ||
+      !SUPPORTED_DATE_FORMATS.some((format) => format === date_format)
+    ) {
       return NextResponse.json(
         { error: 'Invalid date format.' },
         { status: 400 }
       )
     }
 
-    if (!allowedTimezones.includes(timezone)) {
+    if (
+      typeof timezone !== 'string' ||
+      !SUPPORTED_TIMEZONES.some((allowedTimezone) => allowedTimezone === timezone)
+    ) {
       return NextResponse.json(
         { error: 'Invalid time zone.' },
         { status: 400 }
       )
     }
 
-    if (!allowedDashboardPages.includes(default_dashboard_page)) {
+    if (
+      typeof default_dashboard_page !== 'string' ||
+      !SUPPORTED_DASHBOARD_PAGES.some(
+        (page) => page === default_dashboard_page
+      )
+    ) {
       return NextResponse.json(
         { error: 'Invalid dashboard page.' },
         { status: 400 }

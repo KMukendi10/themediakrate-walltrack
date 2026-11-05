@@ -29,6 +29,65 @@ export async function POST(request: Request, { params }: RouteContext) {
     )
   }
 
+  const { data: project, error: projectError } = await auth.supabase
+    .from('projects')
+    .select('id')
+    .eq('id', projectId)
+    .maybeSingle()
+
+  if (projectError) {
+    console.error('Project assignment lookup error:', projectError)
+    return NextResponse.json(
+      { error: 'Unable to verify the project.' },
+      { status: 500 }
+    )
+  }
+
+  if (!project) {
+    return NextResponse.json({ error: 'Project not found.' }, { status: 404 })
+  }
+
+  const { data: wall, error: wallError } = await auth.supabase
+    .from('walls')
+    .select('id')
+    .eq('id', wallId)
+    .maybeSingle()
+
+  if (wallError) {
+    console.error('Wall assignment lookup error:', wallError)
+    return NextResponse.json(
+      { error: 'Unable to verify the wall.' },
+      { status: 500 }
+    )
+  }
+
+  if (!wall) {
+    return NextResponse.json({ error: 'Wall not found.' }, { status: 404 })
+  }
+
+  const { data: existingAssignment, error: assignmentLookupError } =
+    await auth.supabase
+      .from('wall_projects')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('wall_id', wallId)
+      .maybeSingle()
+
+  if (assignmentLookupError) {
+    console.error('Existing assignment lookup error:', assignmentLookupError)
+    return NextResponse.json(
+      { error: 'Unable to check existing wall assignments.' },
+      { status: 500 }
+    )
+  }
+
+  if (existingAssignment) {
+    return NextResponse.json(
+      { error: 'This wall is already assigned to the project.' },
+      { status: 409 }
+    )
+  }
+
   const { error } = await auth.supabase.from('wall_projects').insert({
     project_id: projectId,
     wall_id: wallId,

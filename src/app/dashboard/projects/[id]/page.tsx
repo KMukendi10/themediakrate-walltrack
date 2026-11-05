@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
 import ProjectWallManager from '@/components/dashboard/ProjectWallManager'
+import { getUserDatePreferences } from '@/lib/user-date-preferences'
+import { formatAppDate } from '@/lib/date-format'
 
 type ProjectPageProps = {
   params: Promise<{ id: string }>
@@ -47,6 +49,7 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
+  const datePreferences = await getUserDatePreferences(supabase, user.id)
 
   const { data: project, error } = await supabase
     .from('projects')
@@ -118,16 +121,6 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
     cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
   }
 
-  const formatDate = (date: string | null) => {
-    if (!date) return 'Not set'
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-  }
-
   return (
     <div className="flex min-h-screen bg-[#111111] text-white">
       <Sidebar />
@@ -182,14 +175,14 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
             <div className="rounded-xl border border-white/10 bg-[#1b1b1b] p-5">
               <p className="text-sm text-gray-400">Start Date</p>
               <p className="mt-3 text-xl font-semibold">
-                {formatDate(project.start_date)}
+                {formatAppDate(project.start_date, datePreferences) || 'Not set'}
               </p>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-[#1b1b1b] p-5">
               <p className="text-sm text-gray-400">End Date</p>
               <p className="mt-3 text-xl font-semibold">
-                {formatDate(project.end_date)}
+                {formatAppDate(project.end_date, datePreferences) || 'Not set'}
               </p>
             </div>
           </section>
@@ -223,7 +216,7 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
                 <div>
                   <p className="text-xs text-gray-500">Created On</p>
                   <p className="mt-1">
-                    {new Date(project.created_at).toLocaleDateString('en-ZA')}
+                    {formatAppDate(project.created_at, datePreferences)}
                   </p>
                 </div>
               </div>

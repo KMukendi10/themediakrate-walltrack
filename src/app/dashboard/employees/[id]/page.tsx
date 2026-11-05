@@ -16,6 +16,8 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import { getUserDatePreferences } from '@/lib/user-date-preferences'
+import { formatAppDate } from '@/lib/date-format'
 import CopyEmployeeId from '@/components/dashboard/CopyEmployeeId'
 
 type Employee = {
@@ -69,6 +71,7 @@ async function EmployeeDetailsContent({
   if (currentProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
+  const datePreferences = await getUserDatePreferences(supabase, user.id)
 
   const {
     data: employeeData,
@@ -88,22 +91,6 @@ async function EmployeeDetailsContent({
   }
 
   const employee = employeeData as Employee
-
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-
-  const formatDateTime = (date: string) =>
-    new Date(date).toLocaleString('en-ZA', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
 
   return (
     <div className="flex min-h-screen bg-[#111111] text-white">
@@ -262,7 +249,7 @@ async function EmployeeDetailsContent({
                   </div>
 
                   <p className="mt-3 font-medium">
-                    {formatDate(employee.created_at)}
+                    {formatAppDate(employee.created_at, datePreferences)}
                   </p>
                 </div>
               </div>
@@ -287,7 +274,11 @@ async function EmployeeDetailsContent({
                 </div>
 
                 <p className="mt-4 text-xs text-gray-500">
-                  Registered on {formatDateTime(employee.created_at)}
+                  Registered on {formatAppDate(
+                    employee.created_at,
+                    datePreferences,
+                    true
+                  )}
                 </p>
               </div>
             </section>

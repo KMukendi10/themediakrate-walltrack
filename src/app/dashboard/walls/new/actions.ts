@@ -18,6 +18,21 @@ export async function createWall(formData: FormData) {
     redirect('/login')
   }
 
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('Wall registration authorization error:', profileError)
+    redirect('/dashboard?error=Unable%20to%20verify%20your%20permissions')
+  }
+
+  if (profile?.role !== 'admin') {
+    redirect('/dashboard?error=Only%20administrators%20can%20register%20walls')
+  }
+
   const name = String(formData.get('name') ?? '').trim()
   const latitude = Number(formData.get('latitude'))
   const longitude = Number(formData.get('longitude'))
@@ -25,6 +40,7 @@ export async function createWall(formData: FormData) {
 
   if (
     !name ||
+    name.length > 200 ||
     formData.get('latitude') === null ||
     formData.get('latitude') === '' ||
     formData.get('longitude') === null ||
@@ -47,16 +63,40 @@ export async function createWall(formData: FormData) {
 
   const optionalNumber = (field: string) => {
     const value = formData.get(field)
-    if (value === null || value === '') return null
+    if (value === null || value === '') {
+      return { value: null, valid: true }
+    }
 
     const number = Number(value)
-    return Number.isFinite(number) && number >= 0 ? number : null
+    return {
+      value: Number.isFinite(number) && number >= 0 ? number : null,
+      valid: Number.isFinite(number) && number >= 0,
+    }
+  }
+
+  const gpsAccuracy = optionalNumber('gps_accuracy')
+  const width = optionalNumber('width_m')
+  const height = optionalNumber('height_m')
+  const status = String(formData.get('status') ?? 'active')
+  const wallType = String(formData.get('wall_type') ?? '')
+
+  if (
+    !gpsAccuracy.valid ||
+    !width.valid ||
+    !height.valid ||
+    !['active', 'inactive', 'under_maintenance', 'removed'].includes(status) ||
+    (wallType !== '' &&
+      !['billboard', 'wall_mural', 'building_wrap', 'shop_front', 'other'].includes(
+        wallType
+      ))
+  ) {
+    redirect('/dashboard/walls/new?error=Please provide valid wall details')
   }
 
   const wallData = {
     name,
     description: String(formData.get('description') ?? '').trim() || null,
-    wall_type: String(formData.get('wall_type') ?? '') || null,
+    wall_type: wallType || null,
     address: String(formData.get('address') ?? '').trim() || null,
     suburb: String(formData.get('suburb') ?? '').trim() || null,
     city: String(formData.get('city') ?? '').trim() || null,
@@ -65,10 +105,10 @@ export async function createWall(formData: FormData) {
     latitude,
     longitude,
     location_method: locationMethod,
-    gps_accuracy: optionalNumber('gps_accuracy'),
-    width_m: optionalNumber('width_m'),
-    height_m: optionalNumber('height_m'),
-    status: String(formData.get('status') ?? 'active'),
+    gps_accuracy: gpsAccuracy.value,
+    width_m: width.value,
+    height_m: height.value,
+    status,
     registered_by: user.id,
   }
 

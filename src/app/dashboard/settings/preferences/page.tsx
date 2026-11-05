@@ -28,11 +28,15 @@ async function PreferencesContent() {
 
   if (!user) redirect('/login')
 
-  const { data: preferences } = await supabase
+  const { data: preferences, error: preferencesError } = await supabase
     .from('user_preferences')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle()
+
+  if (preferencesError) {
+    console.error('Preferences page lookup error:', preferencesError)
+  }
 
   return (
     <div className="flex min-h-screen bg-[#111111] text-white">
@@ -75,9 +79,12 @@ async function PreferencesContent() {
               </div>
             </section>
 
-            <SystemPreferencesForm
-              initialPreferences={preferences}
-            />
+            {preferencesError && (
+              <p className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+                Saved preferences could not be loaded. Defaults are shown; changes can still be saved.
+              </p>
+            )}
+            <SystemPreferencesForm initialPreferences={preferences} />
           </div>
         </main>
       </div>

@@ -65,8 +65,23 @@ export async function PATCH(request: Request) {
       .eq('id', user.id)
 
     if (updateError) {
+      console.error('Account profile update error:', updateError)
+      const { error: metadataRollbackError } = await supabase.auth.updateUser({
+        data: user.user_metadata,
+      })
+
+      if (metadataRollbackError) {
+        console.error('Account metadata rollback error:', metadataRollbackError)
+        return NextResponse.json(
+          {
+            error: 'Your profile could not be updated and automatic recovery was incomplete. Contact an administrator before retrying.',
+          },
+          { status: 500 }
+        )
+      }
+
       return NextResponse.json(
-        { error: 'Your profile could not be updated.' },
+        { error: 'Your profile could not be updated. Authentication details were restored; please try again.' },
         { status: 500 }
       )
     }

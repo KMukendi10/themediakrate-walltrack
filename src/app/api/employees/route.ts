@@ -82,9 +82,52 @@ export async function POST(request: Request) {
     )
 
     if (error) {
+      if (
+        error.code === 'email_exists' ||
+        error.code === 'user_already_exists'
+      ) {
+        return NextResponse.json(
+          { error: 'An account already exists for this email address.' },
+          { status: 409 }
+        )
+      }
+
       return NextResponse.json(
-        { error: error.message },
+        { error: 'The invitation could not be sent. Please verify the email and try again.' },
         { status: 400 }
+      )
+    }
+
+    const { data: profile, error: profileError } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('id', data.user.id)
+      .maybeSingle()
+
+    if (profileError || !profile) {
+      if (profileError) {
+        console.error('Invited employee profile verification error:', profileError)
+      }
+
+      const { error: cleanupError } = await admin.auth.admin.deleteUser(
+        data.user.id
+      )
+
+      if (cleanupError) {
+        console.error('Incomplete employee invitation cleanup error:', cleanupError)
+        return NextResponse.json(
+          {
+            error: 'The invitation was created, but the employee profile could not be verified and automatic cleanup failed. Contact an administrator before retrying.',
+          },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json(
+        {
+          error: 'The employee profile was not created, so the invitation was canceled. Please contact an administrator.',
+        },
+        { status: 500 }
       )
     }
 
@@ -212,15 +255,25 @@ export async function PATCH(request: Request) {
 
     if (profileUpdateError) {
       // Attempt to restore Authentication if the profile update fails.
-      await admin.auth.admin.updateUserById(employeeId, {
+      const { error: rollbackError } = await admin.auth.admin.updateUserById(employeeId, {
         email: existingEmployee.email,
         user_metadata: {
           full_name: existingEmployee.full_name,
         },
       })
 
+      if (rollbackError) {
+        console.error('Employee Auth rollback error:', rollbackError)
+        return NextResponse.json(
+          {
+            error: 'The profile could not be updated and the authentication rollback failed. The account may be inconsistent; contact an administrator before retrying.',
+          },
+          { status: 500 }
+        )
+      }
+
       return NextResponse.json(
-        { error: profileUpdateError.message },
+        { error: 'The profile could not be updated. Authentication changes were rolled back; please try again.' },
         { status: 400 }
       )
     }

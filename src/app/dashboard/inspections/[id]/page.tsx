@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
+import { getUserDatePreferences } from "@/lib/user-date-preferences";
+import { formatAppDate } from "@/lib/date-format";
 
 type InspectionPageProps = {
   params: Promise<{ id: string }>;
@@ -35,6 +37,7 @@ async function InspectionDetailsContent({
   if (!user) {
     redirect("/login");
   }
+  const datePreferences = await getUserDatePreferences(supabase, user.id);
 
   // Get inspection
   const { data: inspection, error: inspectionError } = await supabase
@@ -103,13 +106,10 @@ async function InspectionDetailsContent({
     conditionStyles[inspection.condition?.toLowerCase()] ??
     "bg-gray-500/10 text-gray-400 border-gray-500/20";
 
-  const formattedDate = new Date(
-    `${inspection.inspection_date}T00:00:00`
-  ).toLocaleDateString("en-ZA", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = formatAppDate(
+    inspection.inspection_date,
+    datePreferences
+  );
 
   const location = wall
     ? [wall.address, wall.suburb, wall.city, wall.province]

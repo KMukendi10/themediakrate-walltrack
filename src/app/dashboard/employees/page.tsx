@@ -16,6 +16,8 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import { getUserDatePreferences } from '@/lib/user-date-preferences'
+import { formatAppDate } from '@/lib/date-format'
 
 type Employee = {
   id: string
@@ -58,6 +60,7 @@ async function EmployeesContent() {
   if (currentProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
+  const datePreferences = await getUserDatePreferences(supabase, user.id)
 
   const {
     data: employeeData,
@@ -78,13 +81,6 @@ async function EmployeesContent() {
   const regularEmployees = employees.filter(
     (employee) => employee.role === 'employee'
   ).length
-
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
 
   return (
     <div className="flex min-h-screen bg-[#111111] text-white">
@@ -232,7 +228,7 @@ async function EmployeesContent() {
 
                         <p className="mt-1 flex items-center gap-2 text-xs text-gray-500">
                           <CalendarDays size={13} />
-                          Joined {formatDate(employee.created_at)}
+                          Joined {formatAppDate(employee.created_at, datePreferences)}
                         </p>
                       </div>
                     </div>

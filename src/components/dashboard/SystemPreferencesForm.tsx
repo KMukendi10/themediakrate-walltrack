@@ -3,6 +3,11 @@
 
 import { useState } from 'react'
 import { Save, CheckCircle2, AlertCircle } from 'lucide-react'
+import { normalizeDatePreferences } from '@/lib/date-format'
+import {
+  isSupportedDashboardPage,
+  SUPPORTED_DASHBOARD_PAGES,
+} from '@/lib/dashboard-preferences'
 
 type Preferences = {
   date_format: string
@@ -18,16 +23,19 @@ type Props = {
 export default function SystemPreferencesForm({
   initialPreferences,
 }: Props) {
+  const datePreferences = normalizeDatePreferences(initialPreferences)
   const [dateFormat, setDateFormat] = useState(
-    initialPreferences?.date_format ?? 'DD/MM/YYYY'
+    datePreferences.date_format
   )
 
   const [timezone, setTimezone] = useState(
-    initialPreferences?.timezone ?? 'Africa/Johannesburg'
+    datePreferences.timezone
   )
 
-  const [dashboardPage, setDashboardPage] = useState(
-    initialPreferences?.default_dashboard_page ?? '/dashboard'
+  const [dashboardPage, setDashboardPage] = useState<string>(
+    isSupportedDashboardPage(initialPreferences?.default_dashboard_page)
+      ? initialPreferences.default_dashboard_page
+      : '/dashboard'
   )
 
   const [emailNotifications, setEmailNotifications] = useState(
@@ -150,10 +158,18 @@ export default function SystemPreferencesForm({
           className={inputClass}
         >
           <option value="/dashboard">Overview</option>
-          <option value="/dashboard/walls">Wall Management</option>
-          <option value="/dashboard/map">Wall Map</option>
-          <option value="/dashboard/projects">Projects</option>
-          <option value="/dashboard/inspections">Inspections</option>
+          {SUPPORTED_DASHBOARD_PAGES.filter((page) => page !== '/dashboard').map(
+            (page) => (
+              <option key={page} value={page}>
+                {{
+                  '/dashboard/walls': 'Wall Management',
+                  '/dashboard/map': 'Wall Map',
+                  '/dashboard/projects': 'Projects',
+                  '/dashboard/inspections': 'Inspections',
+                }[page]}
+              </option>
+            )
+          )}
         </select>
 
         <p className="mt-2 text-xs text-gray-500">
@@ -168,7 +184,7 @@ export default function SystemPreferencesForm({
           </h3>
 
           <p className="mt-1 text-xs text-gray-500">
-            Enable or disable application email notifications.
+            Save your preference for future email notifications. Email delivery is not configured.
           </p>
         </div>
 

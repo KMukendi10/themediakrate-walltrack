@@ -15,6 +15,8 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import { getUserDatePreferences } from '@/lib/user-date-preferences'
+import { formatAppDate } from '@/lib/date-format'
 
 type Project = {
   id: string
@@ -24,16 +26,7 @@ type Project = {
   start_date: string | null
   end_date: string | null
   created_at: string
-}
-
-function formatDate(date: string | null) {
-  if (!date) return 'Not set'
-
-  return new Date(`${date}T00:00:00`).toLocaleDateString('en-ZA', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  client: { name: string } | { name: string }[] | null
 }
 
 function getStatusStyle(status: string) {
@@ -97,10 +90,11 @@ async function ProjectsContent({
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
+  const datePreferences = await getUserDatePreferences(supabase, user.id)
 
   const { data, error } = await supabase
     .from('projects')
-    .select('id, project_name, description, status, start_date, end_date, created_at')
+    .select('id, project_name, description, status, start_date, end_date, created_at, client:clients(name)')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -115,9 +109,13 @@ async function ProjectsContent({
   const completedProjects = projects.filter((project) => project.status === 'completed').length
 
   const filteredProjects = projects.filter((project) => {
+    const client = Array.isArray(project.client)
+      ? project.client[0]
+      : project.client
     const matchesSearch =
       project.project_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.description ?? '').toLowerCase().includes(searchTerm.toLowerCase())
+      (project.description ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesStatus =
       selectedStatus === 'all' || project.status === selectedStatus
@@ -258,12 +256,12 @@ async function ProjectsContent({
                       <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
                         <span className="inline-flex items-center gap-2">
                           <CalendarDays size={14} />
-                          Start: {formatDate(project.start_date)}
+                          Start: {formatAppDate(project.start_date, datePreferences) || 'Not set'}
                         </span>
 
                         <span className="inline-flex items-center gap-2">
                           <CalendarDays size={14} />
-                          End: {formatDate(project.end_date)}
+                          End: {formatAppDate(project.end_date, datePreferences) || 'Not set'}
                         </span>
                       </div>
                     </div>

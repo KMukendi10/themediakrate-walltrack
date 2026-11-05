@@ -30,24 +30,80 @@ export async function PATCH(request: Request) {
       )
     }
 
-    const body = await request.json()
-
-    const companyName = String(body.company_name || '').trim()
-
-    if (!companyName) {
+    const body: unknown = await request.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json(
-        { error: 'Company name is required.' },
+        { error: 'Please provide valid company details.' },
         { status: 400 }
       )
     }
 
+    const values = body as Record<string, unknown>
+    const companyName =
+      typeof values.company_name === 'string'
+        ? values.company_name.trim()
+        : ''
+    const readOptionalText = (key: string, maximumLength: number) => {
+      const value = values[key]
+      if (value === undefined || value === null || value === '') return null
+      if (
+        typeof value !== 'string' ||
+        value.trim().length > maximumLength
+      ) {
+        return undefined
+      }
+      return value.trim() || null
+    }
+
+    const companyEmail = readOptionalText('company_email', 254)
+    const contactNumber = readOptionalText('contact_number', 30)
+    const website = readOptionalText('website', 255)
+    const physicalAddress = readOptionalText('physical_address', 1000)
+    const description = readOptionalText('description', 2000)
+
+    if (!companyName || companyName.length > 150) {
+      return NextResponse.json(
+        { error: 'Enter a valid company name (maximum 150 characters).' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      companyEmail === undefined ||
+      (companyEmail !== null &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyEmail)) ||
+      contactNumber === undefined ||
+      website === undefined ||
+      physicalAddress === undefined ||
+      description === undefined
+    ) {
+      return NextResponse.json(
+        { error: 'One or more company details are invalid or too long.' },
+        { status: 400 }
+      )
+    }
+
+    if (website) {
+      try {
+        const parsedWebsite = new URL(website)
+        if (!['http:', 'https:'].includes(parsedWebsite.protocol)) {
+          throw new Error('Unsupported protocol')
+        }
+      } catch {
+        return NextResponse.json(
+          { error: 'Enter a valid company website URL.' },
+          { status: 400 }
+        )
+      }
+    }
+
     const updates = {
       company_name: companyName,
-      company_email: body.company_email?.trim() || null,
-      contact_number: body.contact_number?.trim() || null,
-      website: body.website?.trim() || null,
-      physical_address: body.physical_address?.trim() || null,
-      description: body.description?.trim() || null,
+      company_email: companyEmail,
+      contact_number: contactNumber,
+      website,
+      physical_address: physicalAddress,
+      description,
       updated_at: new Date().toISOString(),
     }
 

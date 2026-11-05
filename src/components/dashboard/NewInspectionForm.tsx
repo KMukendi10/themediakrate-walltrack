@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Camera,
@@ -34,6 +34,7 @@ const conditions = [
 
 export default function NewInspectionForm({ walls }: Props) {
   const router = useRouter()
+  const submissionLock = useRef(false)
 
   const [wallId, setWallId] = useState('')
   const [condition, setCondition] = useState('good')
@@ -52,6 +53,11 @@ export default function NewInspectionForm({ walls }: Props) {
     const selectedFiles = Array.from(files)
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
 
+    if (selectedFiles.length + photos.length > 10) {
+      setError('You can upload a maximum of 10 photos per inspection.')
+      return
+    }
+
     const invalidFile = selectedFiles.find(
       (file) => !allowedTypes.includes(file.type)
     )
@@ -62,11 +68,21 @@ export default function NewInspectionForm({ walls }: Props) {
     }
 
     const oversizedFile = selectedFiles.find(
-      (file) => file.size > 10 * 1024 * 1024
+      (file) => file.size === 0 || file.size > 10 * 1024 * 1024
     )
 
     if (oversizedFile) {
-      setError('Each photo must be smaller than 10MB.')
+      setError('Each photo must be non-empty and no larger than 10MB.')
+      return
+    }
+
+    const totalSize = [...photos, ...selectedFiles].reduce(
+      (total, file) => total + file.size,
+      0
+    )
+
+    if (totalSize > 40 * 1024 * 1024) {
+      setError('The combined photo size must not exceed 40MB.')
       return
     }
 
@@ -99,6 +115,8 @@ export default function NewInspectionForm({ walls }: Props) {
       return
     }
 
+    if (submissionLock.current) return
+    submissionLock.current = true
     setLoading(true)
 
     try {
@@ -130,6 +148,7 @@ export default function NewInspectionForm({ walls }: Props) {
           : 'Something went wrong while saving the inspection.'
       )
     } finally {
+      submissionLock.current = false
       setLoading(false)
       setUploadProgress('')
     }

@@ -17,6 +17,8 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import { getUserDatePreferences } from '@/lib/user-date-preferences'
+import { formatAppDate } from '@/lib/date-format'
 
 type WallDetailsProps = {
   params: Promise<{
@@ -97,6 +99,7 @@ async function WallDetailsContent({
   if (authError || !user) {
     redirect('/login')
   }
+  const datePreferences = await getUserDatePreferences(supabase, user.id)
 
   const { data: wallData, error: wallError } = await supabase
     .from('walls')
@@ -208,12 +211,7 @@ async function WallDetailsContent({
 
   const formattedDate = (date: string | null) => {
     if (!date) return 'Not specified'
-
-    return new Date(date).toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
+    return formatAppDate(date, datePreferences)
   }
 
   return (

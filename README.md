@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Media Krate WallTrack
 
-## Getting Started
+WallTrack is an internal workspace for managing advertising walls, projects, inspections, inspection photos, and employee accounts. It uses a dark interface with lime accents and is built with Next.js, React, TypeScript, and Supabase.
 
-First, run the development server:
+## Requirements
+
+- Node.js 22.6 or newer (Next.js requires Node.js 20.9 or newer; the test command uses Node's TypeScript stripping support).
+- npm.
+- A Supabase project configured for the application's schema, Auth, and Storage.
+
+## Local development
+
+1. Install dependencies:
+
+   ```bash
+   npm ci
+   ```
+
+2. Create `.env.local` in the repository root and provide these variables:
+
+   ```text
+   NEXT_PUBLIC_SUPABASE_URL=
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+   SUPABASE_SECRET_KEY=
+   ```
+
+   Use the publishable key in browser/server session clients. `SUPABASE_SECRET_KEY` is used only by the server-side Supabase Admin client for employee invitations and cleanup. Never prefix it with `NEXT_PUBLIC_` or expose it to browser code.
+
+3. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   Open `http://localhost:3000`. The root route sends the visitor to the dashboard, which requires an authenticated session and redirects unauthenticated users to `/login`.
+
+## Useful commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test
+npm run lint
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The tests cover date/time formatting, project input validation, and inspection/photo validation. They are unit tests; they do not exercise a live Supabase project or browser workflows.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Application routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Purpose |
+|---|---|
+| `/` | Redirects to the dashboard. |
+| `/login` | Authenticated employee sign-in. |
+| `/dashboard` | Data-backed workspace summary and recent inspections. |
+| `/dashboard/walls` | Wall directory; `/new`, `/[id]`, and `/[id]/edit` support registration, details, and editing. |
+| `/dashboard/map` | Map of walls with coordinates. |
+| `/dashboard/projects` | Project directory; `/new`, `/[id]`, and `/[id]/edit` support project and wall-assignment management. |
+| `/dashboard/inspections` | Inspection history; `/new` and `/[id]` support recording and review. |
+| `/dashboard/employees` | Employee directory; `/new`, `/[id]`, and `/[id]/edit` are administrator-only. |
+| `/dashboard/settings` | Settings hub. |
+| `/dashboard/settings/account` | Administrator account profile settings. |
+| `/dashboard/settings/company` | Administrator company profile settings. |
+| `/dashboard/settings/roles` | Administrator role information. |
+| `/dashboard/settings/security` | Administrator password change. |
+| `/dashboard/settings/preferences` | Personal display and dashboard preferences. |
 
-## Learn More
+The sidebar contains the primary workspace links; employee and settings pages enforce their role restrictions on the server as well as through the interface.
 
-To learn more about Next.js, take a look at the following resources:
+## Data model and Supabase
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The application code accesses these Postgres tables: `profiles`, `user_preferences`, `clients`, `company_settings`, `walls`, `projects`, `wall_projects`, `inspections`, and `wall_photos`. The code uses profile IDs for authenticated users, client IDs on projects, the `wall_projects` join for project-to-wall assignments, and inspection rows associated with walls and inspector profiles. Inspection photo metadata uses `wall_photos`; uploaded objects use the `wall-photos` Storage bucket. Inspection object paths are organized under the wall and inspection IDs.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+These relationships are inferred from application queries and writes. The repository does not include schema migrations, generated database types, or policy definitions, so the exact live schema, foreign keys, triggers, and constraints must be checked in the Supabase project.
 
-## Deploy on Vercel
+All Supabase browser and session-backed server clients use the publishable key. The service/secret-key client is server-only and used for Auth Admin employee invitation/cleanup. Do not copy secret keys into client components, public environment variables, or API responses.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Roles and authorization
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Administrators** can manage employee records, projects and project-wall assignments, wall edits, company/account settings, and security settings. Administrator-only APIs verify the authenticated user's profile role on the server.
+- **Employees** can view workspace data and record inspections. Wall creation and the listed dashboard work areas are available to authenticated employees in the application.
+- **Unauthenticated visitors** can access the sign-in page only. The root route leads to the authenticated dashboard.
+
+These application checks do not replace Supabase Row Level Security. The live RLS and Storage policies have not been inspected or changed as part of this repository work. Confirm policies for every table and for `wall-photos` before deployment.
+
+## Notifications and email
+
+The notification control shows recent inspection records from the existing schema; it does not track read/unread state. User preferences for email notifications are saved, but WallTrack has no configured outbound notification-email provider. Employee invitations rely on Supabase Auth email configuration.
+
+## Deployment
+
+Deploy as a Node.js Next.js application and configure the three environment variables above in the hosting provider's secret/environment settings. Keep `SUPABASE_SECRET_KEY` server-only. Configure Supabase Auth redirect URLs, employee invitation email delivery, database RLS policies, and Storage policies for the deployed origins. Provide the private `wall-photos` bucket policies needed to upload images and issue signed viewing URLs.
+
+Before internal production use, verify live Supabase schema/policies and exercise sign-in, invitations, project/wall assignments, inspection uploads and rollback behavior, signed photo viewing, and employee/admin permissions in a non-production environment. No live Supabase or browser end-to-end testing is represented by the repository's automated checks.
+
+## Outstanding reliability work
+
+Cross-request duplicate inspection prevention and race-safe uniqueness for project-wall assignments require database-level idempotency/unique constraints. They are not fully guaranteed by client submission locks or pre-insert duplicate checks. Propose and approve migrations before implementing those guarantees. Also verify the employee invitation/profile trigger behavior in the live project before relying on its automatic profile-creation cleanup path.

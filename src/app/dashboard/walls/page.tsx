@@ -95,6 +95,17 @@ async function WallsContent({
     redirect('/login')
   }
 
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('Wall management role lookup error:', profileError)
+  }
+  const isAdmin = profile?.role === 'admin'
+
   const [
     { data: wallsData, error: wallsError },
     { data: wallProjectsData },
@@ -222,13 +233,15 @@ async function WallsContent({
               </p>
             </div>
 
-            <Link
-              href="/dashboard/walls/new"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed32]"
-            >
-              <Plus size={18} />
-              Add New Wall
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/dashboard/walls/new"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed32]"
+              >
+                <Plus size={18} />
+                Add New Wall
+              </Link>
+            )}
           </div>
 
           {success && (
@@ -378,7 +391,7 @@ async function WallsContent({
                     : 'Try changing your search term or status filter.'}
                 </p>
 
-                {walls.length === 0 && (
+                {walls.length === 0 && isAdmin && (
                   <Link
                     href="/dashboard/walls/new"
                     className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#E7FF3C] px-5 py-3 text-sm font-bold text-black transition hover:bg-[#d6ed32]"
