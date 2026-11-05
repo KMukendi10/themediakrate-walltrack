@@ -119,7 +119,7 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
                 ← Back to Projects
               </Link>
 
-              <h1 className="mt-3 text-3xl font-bold">
+              <h1 className="mt-4 text-2xl font-bold">
                 {project.project_name}
               </h1>
 
@@ -128,14 +128,23 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
               </p>
             </div>
 
-            <span
-              className={`rounded-full border px-4 py-2 text-sm font-medium capitalize ${
-                statusStyles[project.status] ??
-                'bg-gray-500/10 text-gray-400 border-gray-500/20'
-              }`}
-            >
-              {project.status.replace('_', ' ')}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`rounded-full border px-4 py-2 text-sm font-medium capitalize ${
+                  statusStyles[project.status] ??
+                  'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                }`}
+              >
+                {project.status.replace('_', ' ')}
+              </span>
+
+              <Link
+                href={`/dashboard/projects/${project.id}/edit`}
+                className="rounded-lg bg-[#E7FF3C] px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-300"
+              >
+                Edit Project
+              </Link>
+            </div>
           </div>
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
