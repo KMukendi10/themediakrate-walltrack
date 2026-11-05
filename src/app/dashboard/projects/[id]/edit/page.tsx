@@ -7,9 +7,13 @@ type PageProps = {
   }>
 }
 
-export default async function EditProjectPage({ params }: PageProps) {
+async function EditProjectContent({ params }: PageProps) {
   const { id } = await params
 
+  return <EditProjectForm projectId={id} />
+}
+
+export default function EditProjectPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
@@ -18,7 +22,7 @@ export default async function EditProjectPage({ params }: PageProps) {
         </div>
       }
     >
-      <EditProjectForm projectId={id} />
+      <EditProjectContent params={params} />
     </Suspense>
   )
 }

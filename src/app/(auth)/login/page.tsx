@@ -2,10 +2,10 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { login } from './actions'
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const [loading, setLoading] = useState(false)
@@ -97,5 +97,19 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#111111] text-gray-400">
+          Loading sign-in...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }
