@@ -6,6 +6,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import ProjectWallManager from '@/components/dashboard/ProjectWallManager'
 
 type ProjectPageProps = {
   params: Promise<{ id: string }>
@@ -251,69 +252,22 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
             </div>
           </section>
 
-          <section className="rounded-xl border border-white/10 bg-[#1b1b1b] p-6">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold">
-                  Assigned Advertising Walls
-                </h2>
-                <p className="mt-1 text-sm text-gray-400">
-                  Physical locations linked to this project
-                </p>
-              </div>
+          <ProjectWallManager
+            projectId={project.id}
+            initialAssignments={walls.map((assignment: any) => {
+              const wall = Array.isArray(assignment.wall)
+                ? assignment.wall[0]
+                : assignment.wall
 
-              <span className="rounded-lg bg-white/5 px-3 py-2 text-sm text-gray-300">
-                {walls.length} walls
-              </span>
-            </div>
-
-            {walls.length > 0 ? (
-              <div className="space-y-3">
-                {walls.map((assignment: any) => {
-                  const wall = Array.isArray(assignment.wall)
-                    ? assignment.wall[0]
-                    : assignment.wall
-
-                  if (!wall) return null
-
-                  return (
-                    <div
-                      key={assignment.id}
-                      className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-white/10 p-4"
-                    >
-                      <div>
-                        <p className="font-medium">{wall.name}</p>
-                        <p className="mt-1 text-xs text-yellow-400">
-                          {wall.wall_code}
-                        </p>
-                        <p className="mt-1 text-sm text-gray-400">
-                          {[wall.address, wall.suburb, wall.city]
-                            .filter(Boolean)
-                            .join(', ') || 'No address provided'}
-                        </p>
-                        <p className="mt-1 text-xs capitalize text-gray-500">
-                          Wall status: {wall.status.replace('_', ' ')}
-                        </p>
-                      </div>
-
-                      <Link
-                        href={`/dashboard/walls/${wall.id}`}
-                        className="rounded-lg border border-white/10 px-4 py-2 text-sm hover:border-yellow-400 hover:text-yellow-400"
-                      >
-                        View Wall →
-                      </Link>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-white/10 py-12 text-center">
-                <p className="text-gray-400">
-                  No walls have been assigned to this project yet.
-                </p>
-              </div>
-            )}
-          </section>
+              return {
+                id: assignment.id,
+                installation_date: assignment.installation_date,
+                completion_date: assignment.completion_date,
+                notes: assignment.notes,
+                wall: wall ?? null,
+              }
+            })}
+          />
         </div>
       </main>
     </div>
