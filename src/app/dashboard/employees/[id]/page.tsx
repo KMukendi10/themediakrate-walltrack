@@ -10,6 +10,7 @@ import {
   CalendarDays,
   ShieldCheck,
   User,
+  Pencil,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
@@ -120,18 +121,28 @@ async function EmployeeDetailsContent({
             Back to Employees
           </Link>
 
-          <div className="mb-8">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[#E7FF3C]">
-              TEAM MANAGEMENT
-            </p>
+          <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.2em] text-[#E7FF3C]">
+                TEAM MANAGEMENT
+              </p>
 
-            <h1 className="mt-2 text-3xl font-bold">
-              Employee Details
-            </h1>
+              <h1 className="mt-2 text-3xl font-bold">
+                Employee Details
+              </h1>
 
-            <p className="mt-2 text-sm text-gray-400">
-              View employee profile and account information.
-            </p>
+              <p className="mt-2 text-sm text-gray-400">
+                View employee profile and account information.
+              </p>
+            </div>
+
+            <Link
+              href={`/dashboard/employees/${employee.id}/edit`}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E7FF3C] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#d6ee32]"
+            >
+              <Pencil size={16} />
+              Edit Employee
+            </Link>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">

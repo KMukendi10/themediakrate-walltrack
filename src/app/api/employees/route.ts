@@ -4,42 +4,56 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function POST(request: Request) {
-  try {
-    // Verify the person making the request is logged in.
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+async function verifyAdmin() {
+  const supabase = await createClient()
 
-    if (authError || !user) {
-      return NextResponse.json(
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json(
         { error: 'You must be logged in to perform this action.' },
         { status: 401 }
-      )
+      ),
     }
+  }
 
-    // Only administrators may invite employees.
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
-    if (profileError || profile?.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'You do not have permission to invite employees.' },
+  if (profileError || profile?.role !== 'admin') {
+    return {
+      error: NextResponse.json(
+        { error: 'You do not have permission to perform this action.' },
         { status: 403 }
-      )
+      ),
     }
+  }
 
-    // Validate the submitted details.
+  return { supabase, user }
+}
+
+export async function POST(request: Request) {
+  try {
+    const auth = await verifyAdmin()
+
+    if (auth.error) return auth.error
+
     const body = await request.json()
+
     const fullName =
       typeof body.full_name === 'string' ? body.full_name.trim() : ''
+
     const email =
-      typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+      typeof body.email === 'string'
+        ? body.email.trim().toLowerCase()
+        : ''
 
     if (!fullName || fullName.length > 100) {
       return NextResponse.json(
@@ -58,21 +72,18 @@ export async function POST(request: Request) {
       )
     }
 
-    // Invite the employee using the server-side Admin API.
-    // The database trigger automatically creates their profile
-    // with the default employee role.
     const admin = createAdminClient()
 
-    const { data, error: inviteError } =
-      await admin.auth.admin.inviteUserByEmail(email, {
-        data: {
-          full_name: fullName,
-        },
-      })
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(
+      email,
+      {
+        data: { full_name: fullName },
+      }
+    )
 
-    if (inviteError) {
+    if (error) {
       return NextResponse.json(
-        { error: inviteError.message },
+        { error: error.message },
         { status: 400 }
       )
     }
@@ -92,6 +103,109 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: 'Something went wrong while inviting the employee.' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const auth = await verifyAdmin()
+
+    if (auth.error) return auth.error
+
+    const body = await request.json()
+
+    const employeeId =
+      typeof body.id === 'string' ? body.id.trim() : ''
+
+    const fullName =
+      typeof body.full_name === 'string' ? body.full_name.trim() : ''
+
+    const role = body.role
+
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: 'Employee ID is required.' },
+        { status: 400 }
+      )
+    }
+
+    if (!fullName || fullName.length > 100) {
+      return NextResponse.json(
+        { error: 'Enter a valid full name (maximum 100 characters).' },
+        { status: 400 }
+      )
+    }
+
+    if (role !== 'admin' && role !== 'employee') {
+      return NextResponse.json(
+        { error: 'Select a valid employee role.' },
+        { status: 400 }
+      )
+    }
+
+    if (employeeId === auth.user.id && role !== 'admin') {
+      return NextResponse.json(
+        { error: 'You cannot remove your own administrator role.' },
+        { status: 400 }
+      )
+    }
+
+    const { data: existingEmployee, error: employeeError } =
+      await auth.supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('id', employeeId)
+        .single()
+
+    if (employeeError || !existingEmployee) {
+      return NextResponse.json(
+        { error: 'Employee account could not be found.' },
+        { status: 404 }
+      )
+    }
+
+    const admin = createAdminClient()
+
+    const { error: authUpdateError } =
+      await admin.auth.admin.updateUserById(employeeId, {
+        user_metadata: {
+          full_name: fullName,
+        },
+      })
+
+    if (authUpdateError) {
+      return NextResponse.json(
+        { error: authUpdateError.message },
+        { status: 400 }
+      )
+    }
+
+    const { error: profileUpdateError } = await auth.supabase
+      .from('profiles')
+      .update({
+        full_name: fullName,
+        role,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', employeeId)
+
+    if (profileUpdateError) {
+      return NextResponse.json(
+        { error: profileUpdateError.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      message: 'Employee details updated successfully.',
+    })
+  } catch (error) {
+    console.error('Employee update error:', error)
+
+    return NextResponse.json(
+      { error: 'Something went wrong while updating the employee.' },
       { status: 500 }
     )
   }
