@@ -39,7 +39,7 @@ async function PreferencesContent() {
       <Sidebar />
 
       <div className="min-w-0 flex-1">
-        <Topbar />
+        <Topbar email={user.email ?? ''} />
 
         <main className="p-6 lg:p-8">
           <div className="mx-auto max-w-4xl">

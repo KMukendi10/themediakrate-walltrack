@@ -107,7 +107,7 @@ export default function EditEmployeeForm({
         />
 
         <p className="mt-2 text-xs text-gray-500">
-          Updating this address also updates the employee's login email.
+          Updating this address also updates the employee&apos;s login email.
         </p>
       </div>
 
@@ -133,7 +133,7 @@ export default function EditEmployeeForm({
       <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
         <p className="text-sm text-yellow-400">
           Please double-check the new email address. It will be used
-          for the employee's account login.
+          for the employee&apos;s account login.
         </p>
       </div>
 

@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { notFound, redirect } from "next/navigation";
@@ -308,9 +309,12 @@ async function InspectionDetailsContent({
                     rel="noreferrer"
                     className="block"
                   >
-                    <img
+                    <Image
                       src={photo.signedUrl}
                       alt={photo.caption || "Inspection photo"}
+                      width={800}
+                      height={600}
+                      unoptimized
                       className="h-56 w-full object-cover transition duration-300 hover:scale-105"
                     />
                   </a>

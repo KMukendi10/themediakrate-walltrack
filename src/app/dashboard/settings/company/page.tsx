@@ -51,7 +51,7 @@ async function CompanyProfileContent() {
       <Sidebar />
 
       <div className="min-w-0 flex-1">
-        <Topbar />
+        <Topbar email={user.email ?? ''} />
 
         <main className="p-6 lg:p-8">
           <div className="mx-auto max-w-5xl">
@@ -74,7 +74,7 @@ async function CompanyProfileContent() {
                 </h1>
 
                 <p className="mt-2 text-sm text-gray-400">
-                  Manage The Media Krate's company information.
+                  Manage The Media Krate&apos;s company information.
                 </p>
               </div>
             </div>

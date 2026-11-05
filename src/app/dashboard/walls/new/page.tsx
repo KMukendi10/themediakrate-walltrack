@@ -164,7 +164,7 @@ export default function NewWallPage() {
               <div>
                 <h2 className="text-lg font-bold">Location Details</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Enter the address and capture the wall's coordinates.
+                  Enter the address and capture the wall&apos;s coordinates.
                 </p>
               </div>
             </div>
@@ -245,7 +245,7 @@ export default function NewWallPage() {
             <div className="mt-8 border-t border-white/10 pt-6">
               <h3 className="font-semibold">GPS Coordinates *</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Capture the wall's position using GPS or enter its coordinates manually.
+                Capture the wall&apos;s position using GPS or enter its coordinates manually.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-3">

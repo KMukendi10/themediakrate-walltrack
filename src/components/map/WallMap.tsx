@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -57,6 +57,10 @@ const wallIcon = L.divIcon({
   popupAnchor: [0, -34],
 })
 
+const subscribeToClient = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
+
 function MapController({
   walls,
   selectedWallId,
@@ -98,11 +102,11 @@ export default function WallMap({
   walls,
   selectedWallId,
 }: WallMapProps) {
-  const [mapReady, setMapReady] = useState(false)
-
-  useEffect(() => {
-    setMapReady(true)
-  }, [])
+  const mapReady = useSyncExternalStore(
+    subscribeToClient,
+    getClientSnapshot,
+    getServerSnapshot
+  )
 
   if (!mapReady) {
     return (

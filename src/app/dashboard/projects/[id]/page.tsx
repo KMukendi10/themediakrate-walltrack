@@ -12,6 +12,30 @@ type ProjectPageProps = {
   params: Promise<{ id: string }>
 }
 
+type ProjectWall = {
+  id: string
+  installation_date: string | null
+  completion_date: string | null
+  notes: string | null
+  wall: {
+    id: string
+    wall_code: string
+    name: string
+    address: string | null
+    suburb: string | null
+    city: string | null
+    status: string
+  } | {
+    id: string
+    wall_code: string
+    name: string
+    address: string | null
+    suburb: string | null
+    city: string | null
+    status: string
+  }[] | null
+}
+
 async function ProjectDetailsContent({ params }: ProjectPageProps) {
   await connection()
 
@@ -80,11 +104,12 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
     console.error('Project walls error:', assignmentsError)
   }
 
+  const projectWalls: ProjectWall[] = assignments ?? []
   const client = Array.isArray(project.client)
     ? project.client[0]
     : project.client
 
-  const walls = assignments ?? []
+  const walls = projectWalls
 
   const statusStyles: Record<string, string> = {
     planning: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -254,7 +279,7 @@ async function ProjectDetailsContent({ params }: ProjectPageProps) {
 
           <ProjectWallManager
             projectId={project.id}
-            initialAssignments={walls.map((assignment: any) => {
+            initialAssignments={walls.map((assignment) => {
               const wall = Array.isArray(assignment.wall)
                 ? assignment.wall[0]
                 : assignment.wall

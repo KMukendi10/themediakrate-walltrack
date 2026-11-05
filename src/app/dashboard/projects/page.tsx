@@ -11,7 +11,6 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   Clock3,
-  CircleAlert,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -31,20 +31,15 @@ export default function ProjectWallManager({
   projectId,
   initialAssignments,
 }: Props) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
 
   const [walls, setWalls] = useState<Wall[]>([])
   const [selectedWall, setSelectedWall] = useState('')
-  const [assignments, setAssignments] = useState(initialAssignments)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [removingId, setRemovingId] = useState('')
   const [message, setMessage] = useState('')
-
-  useEffect(() => {
-    setAssignments(initialAssignments)
-  }, [initialAssignments])
 
   useEffect(() => {
     async function loadWalls() {
@@ -65,9 +60,9 @@ export default function ProjectWallManager({
     }
 
     loadWalls()
-  }, [])
+  }, [supabase])
 
-  const assignedWallIds = assignments
+  const assignedWallIds = initialAssignments
     .map((assignment) => assignment.wall?.id)
     .filter(Boolean)
 
@@ -125,10 +120,6 @@ export default function ProjectWallManager({
       return
     }
 
-    setAssignments((current) =>
-      current.filter((assignment) => assignment.id !== assignmentId)
-    )
-
     setMessage('Wall removed successfully.')
     setRemovingId('')
 
@@ -148,7 +139,7 @@ export default function ProjectWallManager({
         </div>
 
         <span className="rounded-lg bg-white/5 px-3 py-2 text-sm text-gray-300">
-          {assignments.length} walls
+          {initialAssignments.length} walls
         </span>
       </div>
 
@@ -199,9 +190,9 @@ export default function ProjectWallManager({
         </p>
       )}
 
-      {assignments.length > 0 ? (
+      {initialAssignments.length > 0 ? (
         <div className="space-y-3">
-          {assignments.map((assignment) => {
+          {initialAssignments.map((assignment) => {
             const wall = assignment.wall
 
             if (!wall) return null

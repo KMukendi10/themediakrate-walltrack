@@ -13,26 +13,6 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type Wall = {
-  id: string
-  wall_code: string
-  name: string
-  description: string | null
-  wall_type: string | null
-  address: string | null
-  suburb: string | null
-  city: string | null
-  province: string | null
-  postal_code: string | null
-  latitude: number
-  longitude: number
-  location_method: string
-  gps_accuracy: number | null
-  width_m: number | null
-  height_m: number | null
-  status: string
-}
-
 type Props = {
   wallId: string
 }
