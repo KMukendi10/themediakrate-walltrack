@@ -24,7 +24,7 @@ function LoginForm() {
           </div>
 
           <h1 className="text-3xl font-black tracking-tight text-white">
-            MEDIA KRATE
+            The Media Krate
           </h1>
 
           <p className="mt-2 text-sm tracking-[0.25em] text-[#E7FF3C]">
