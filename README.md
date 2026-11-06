@@ -53,11 +53,11 @@ The tests cover date/time formatting, project input validation, and inspection/p
 | `/` | Redirects to the dashboard. |
 | `/login` | Authenticated employee sign-in. |
 | `/dashboard` | Data-backed workspace summary and recent inspections. |
-| `/dashboard/walls` | Wall directory; `/new`, `/[id]`, and `/[id]/edit` support registration, details, and editing. |
+| `/dashboard/walls` | Wall directory; `/new`, `/[id]`, and `/[id]/edit` support registration, details, and editing. Administrators can permanently delete a wall and its assignments, inspections, and stored photos. |
 | `/dashboard/map` | Map of walls with coordinates. |
-| `/dashboard/projects` | Project directory; `/new`, `/[id]`, and `/[id]/edit` support project and wall-assignment management. |
-| `/dashboard/inspections` | Inspection history; `/new` and `/[id]` support recording and review. |
-| `/dashboard/employees` | Employee directory; `/new`, `/[id]`, and `/[id]/edit` are administrator-only. |
+| `/dashboard/projects` | Project directory; `/new`, `/[id]`, and `/[id]/edit` support project and wall-assignment management. Administrators can permanently delete a project and its wall assignments. |
+| `/dashboard/inspections` | Inspection history; `/new` and `/[id]` support recording and review. Administrators can permanently delete an inspection and its stored photos. |
+| `/dashboard/employees` | Employee directory; `/new`, `/[id]`, and `/[id]/edit` are administrator-only. Administrators can permanently delete another account while retaining anonymized inspection history. |
 | `/dashboard/settings` | Settings hub. |
 | `/dashboard/settings/account` | Administrator account profile settings. |
 | `/dashboard/settings/company` | Administrator company profile settings. |
@@ -73,15 +73,15 @@ The application code accesses these Postgres tables: `profiles`, `user_preferenc
 
 These relationships are inferred from application queries and writes. The repository does not include schema migrations, generated database types, or policy definitions, so the exact live schema, foreign keys, triggers, and constraints must be checked in the Supabase project.
 
-All Supabase browser and session-backed server clients use the publishable key. The service/secret-key client is server-only and used for Auth Admin employee invitation/cleanup. Do not copy secret keys into client components, public environment variables, or API responses.
+All Supabase browser and session-backed server clients use the publishable key. The service/secret-key client is server-only and used for Auth Admin employee invitation/deletion and administrator-authorized permanent record cleanup. Destructive APIs verify the authenticated administrator role before using it. Do not copy secret keys into client components, public environment variables, or API responses.
 
 ## Roles and authorization
 
-- **Administrators** can manage employee records, projects and project-wall assignments, wall edits, company/account settings, and security settings. Administrator-only APIs verify the authenticated user's profile role on the server.
+- **Administrators** can manage employee records, projects and project-wall assignments, wall edits, company/account settings, and security settings. Administrator-only APIs verify the authenticated user's profile role on the server. They can permanently delete projects, walls, inspections, and other employees; deleting a wall also deletes its assignments, inspections, photo metadata, and stored photos. Deleting an employee retains inspection records but removes their account and anonymizes attribution. The signed-in administrator cannot delete their own account, and the last administrator cannot be deleted.
 - **Employees** can view workspace data and record inspections. Wall creation and the listed dashboard work areas are available to authenticated employees in the application.
 - **Unauthenticated visitors** can access the sign-in page only. The root route leads to the authenticated dashboard.
 
-These application checks do not replace Supabase Row Level Security. The live RLS and Storage policies have not been inspected or changed as part of this repository work. Confirm policies for every table and for `wall-photos` before deployment.
+These application checks do not replace Supabase Row Level Security. The live RLS and Storage policies have not been inspected or changed as part of this repository work. Confirm policies for every table and for `wall-photos` before deployment. Permanent cleanup spans Postgres and Storage and is not one atomic transaction; if a step fails, the API reports what remains and an administrator can retry. Validate the live foreign keys, nullable attribution columns, and Storage layout before relying on permanent deletion in production.
 
 ## Notifications and email
 

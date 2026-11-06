@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Bell } from 'lucide-react'
 import {
   DEFAULT_DATE_PREFERENCES,
@@ -18,12 +18,35 @@ type Update = {
 }
 
 export default function RecentUpdates() {
+  const updatesRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [updates, setUpdates] = useState<Update[]>([])
   const [datePreferences, setDatePreferences] =
     useState<DateDisplayPreferences>(DEFAULT_DATE_PREFERENCES)
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        !updatesRef.current?.contains(event.target)
+      ) {
+        setOpen(false)
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   async function toggleUpdates() {
     if (open) {
@@ -58,19 +81,24 @@ export default function RecentUpdates() {
   }
 
   return (
-    <div className="relative">
+    <div ref={updatesRef} className="relative">
       <button
         type="button"
         onClick={toggleUpdates}
         className="text-gray-400 transition hover:text-white"
         aria-label="Recent inspection updates"
+        aria-haspopup="dialog"
         aria-expanded={open}
       >
         <Bell size={19} />
       </button>
 
       {open && (
-        <section className="absolute right-0 top-full z-50 mt-4 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-[#1B1B1B] p-3 shadow-2xl">
+        <section
+          role="dialog"
+          aria-label="Recent inspections"
+          className="absolute right-0 top-full z-50 mt-4 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-[#1B1B1B] p-3 shadow-2xl"
+        >
           <h3 className="px-2 py-1 text-sm font-semibold text-white">
             Recent inspections
           </h3>

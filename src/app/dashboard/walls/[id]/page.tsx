@@ -17,6 +17,7 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import DeleteWallButton from '@/components/dashboard/DeleteWallButton'
 import { getUserDatePreferences } from '@/lib/user-date-preferences'
 import { formatAppDate } from '@/lib/date-format'
 
@@ -100,6 +101,16 @@ async function WallDetailsContent({
     redirect('/login')
   }
   const datePreferences = await getUserDatePreferences(supabase, user.id)
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('Wall action authorization lookup error:', profileError)
+  }
+  const isAdmin = profile?.role === 'admin'
 
   const { data: wallData, error: wallError } = await supabase
     .from('walls')
@@ -264,6 +275,8 @@ async function WallDetailsContent({
                 <Pencil size={17} />
                 Edit Wall
               </Link>
+
+              {isAdmin && <DeleteWallButton wallId={wall.id} />}
 
               <Link
                 href={`/dashboard/map?wall=${wall.id}`}

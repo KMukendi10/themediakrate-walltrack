@@ -7,7 +7,7 @@ import { MapPin, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
-import WallMap from '@/components/map/WallMap'
+import WallMap from '@/components/map/WallMapClient'
 
 type MapPageProps = {
   searchParams: Promise<{

@@ -19,6 +19,7 @@ import Topbar from '@/components/dashboard/Topbar'
 import { getUserDatePreferences } from '@/lib/user-date-preferences'
 import { formatAppDate } from '@/lib/date-format'
 import CopyEmployeeId from '@/components/dashboard/CopyEmployeeId'
+import DeleteEmployeeButton from '@/components/dashboard/DeleteEmployeeButton'
 
 type Employee = {
   id: string
@@ -130,6 +131,9 @@ async function EmployeeDetailsContent({
               <Pencil size={16} />
               Edit Employee
             </Link>
+            {user.id !== employee.id && (
+              <DeleteEmployeeButton employeeId={employee.id} />
+            )}
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">

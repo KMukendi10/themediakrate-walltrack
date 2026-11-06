@@ -22,6 +22,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.walltrack-sidebar-scroll {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.walltrack-sidebar-scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 .walltrack-dark-map .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.78) contrast(0.88) saturate(0.65);
 }

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import {
   MapContainer,
@@ -25,7 +25,7 @@ type Wall = {
   status: string
 }
 
-type WallMapProps = {
+export type WallMapProps = {
   walls: Wall[]
   selectedWallId?: string
 }
@@ -57,10 +57,6 @@ const wallIcon = L.divIcon({
   iconAnchor: [17, 34],
   popupAnchor: [0, -34],
 })
-
-const subscribeToClient = () => () => {}
-const getClientSnapshot = () => true
-const getServerSnapshot = () => false
 
 function MapController({
   walls,
@@ -116,11 +112,6 @@ export default function WallMap({
   const mapShellRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [fullscreenError, setFullscreenError] = useState('')
-  const mapReady = useSyncExternalStore(
-    subscribeToClient,
-    getClientSnapshot,
-    getServerSnapshot
-  )
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -132,14 +123,6 @@ export default function WallMap({
     return () =>
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
-
-  if (!mapReady) {
-    return (
-      <div className="flex h-full min-h-[500px] items-center justify-center bg-[#1B1B1B] text-sm text-gray-500">
-        Loading map...
-      </div>
-    )
-  }
 
   const defaultCenter: [number, number] =
     walls.length > 0

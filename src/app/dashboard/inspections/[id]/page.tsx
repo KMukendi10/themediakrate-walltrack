@@ -15,8 +15,11 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
+import Sidebar from "@/components/dashboard/Sidebar";
+import Topbar from "@/components/dashboard/Topbar";
 import { getUserDatePreferences } from "@/lib/user-date-preferences";
 import { formatAppDate } from "@/lib/date-format";
+import DeleteInspectionButton from "@/components/dashboard/DeleteInspectionButton";
 
 type InspectionPageProps = {
   params: Promise<{ id: string }>;
@@ -38,6 +41,15 @@ async function InspectionDetailsContent({
     redirect("/login");
   }
   const datePreferences = await getUserDatePreferences(supabase, user.id);
+  const { data: currentProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError) {
+    console.error("Inspection deletion authorization lookup error:", profileError);
+  }
+  const isAdmin = currentProfile?.role === "admin";
 
   // Get inspection
   const { data: inspection, error: inspectionError } = await supabase
@@ -118,7 +130,12 @@ async function InspectionDetailsContent({
     : "Wall information unavailable";
 
   return (
-    <div className="space-y-8">
+    <div className="flex min-h-screen bg-[#111111] text-white">
+      <Sidebar />
+      <div className="min-w-0 flex-1">
+        <Topbar email={user.email ?? "Employee"} />
+        <main className="p-6 lg:p-8">
+          <div className="space-y-8">
       {/* Header */}
       <div>
         <Link
@@ -145,11 +162,14 @@ async function InspectionDetailsContent({
             </p>
           </div>
 
-          <span
-            className={`w-fit rounded-full border px-4 py-2 text-sm font-medium capitalize ${conditionStyle}`}
-          >
-            {inspection.condition}
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`w-fit rounded-full border px-4 py-2 text-sm font-medium capitalize ${conditionStyle}`}
+            >
+              {inspection.condition}
+            </span>
+            {isAdmin && <DeleteInspectionButton inspectionId={id} />}
+          </div>
         </div>
       </div>
 
@@ -334,6 +354,9 @@ async function InspectionDetailsContent({
           </div>
         )}
       </section>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

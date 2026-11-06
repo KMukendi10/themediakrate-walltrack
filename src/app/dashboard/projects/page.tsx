@@ -15,6 +15,7 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
 import Topbar from '@/components/dashboard/Topbar'
+import DeleteProjectButton from '@/components/dashboard/DeleteProjectButton'
 import { getUserDatePreferences } from '@/lib/user-date-preferences'
 import { formatAppDate } from '@/lib/date-format'
 
@@ -91,6 +92,15 @@ async function ProjectsContent({
 
   if (!user) redirect('/login')
   const datePreferences = await getUserDatePreferences(supabase, user.id)
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (profileError) {
+    console.error('Project deletion authorization lookup error:', profileError)
+  }
+  const isAdmin = profile?.role === 'admin'
 
   const { data, error } = await supabase
     .from('projects')
@@ -273,6 +283,9 @@ async function ProjectsContent({
                       >
                         View Details
                       </Link>
+                      {isAdmin && (
+                        <DeleteProjectButton projectId={project.id} />
+                      )}
                     </div>
                   </div>
                 ))}
