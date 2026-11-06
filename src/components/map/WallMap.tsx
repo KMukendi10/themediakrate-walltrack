@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Maximize2, Minimize2 } from 'lucide-react'
 import {
   MapContainer,
   TileLayer,
@@ -68,6 +69,16 @@ function MapController({
   const map = useMap()
 
   useEffect(() => {
+    const handleFullscreenChange = () => {
+      requestAnimationFrame(() => map.invalidateSize({ pan: false }))
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () =>
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [map])
+
+  useEffect(() => {
     if (selectedWallId) {
       const selectedWall = walls.find(
         (wall) => wall.id === selectedWallId
@@ -102,11 +113,25 @@ export default function WallMap({
   walls,
   selectedWallId,
 }: WallMapProps) {
+  const mapShellRef = useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [fullscreenError, setFullscreenError] = useState('')
   const mapReady = useSyncExternalStore(
     subscribeToClient,
     getClientSnapshot,
     getServerSnapshot
   )
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === mapShellRef.current)
+      setFullscreenError('')
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () =>
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   if (!mapReady) {
     return (
@@ -121,16 +146,56 @@ export default function WallMap({
       ? [walls[0].latitude, walls[0].longitude]
       : [-26.2041, 28.0473]
 
+  async function toggleFullscreen() {
+    const mapShell = mapShellRef.current
+    if (!mapShell) return
+
+    setFullscreenError('')
+    try {
+      if (document.fullscreenElement === mapShell) {
+        await document.exitFullscreen()
+      } else if (mapShell.requestFullscreen) {
+        await mapShell.requestFullscreen()
+      } else {
+        setFullscreenError('Fullscreen is not supported by this browser.')
+      }
+    } catch (error) {
+      console.error('Map fullscreen error:', error)
+      setFullscreenError('Unable to open the map in fullscreen.')
+    }
+  }
+
   return (
-    <div className="h-full min-h-[500px] overflow-hidden rounded-xl border border-white/10">
+    <div
+      ref={mapShellRef}
+      className="walltrack-map-shell relative h-full min-h-[500px] overflow-hidden rounded-xl border border-white/10"
+    >
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? 'Exit fullscreen map' : 'View map fullscreen'}
+        aria-pressed={isFullscreen}
+        className="absolute right-3 top-3 z-[1000] inline-flex items-center gap-2 rounded-lg border border-white/15 bg-[#171717]/95 px-3 py-2 text-sm font-medium text-white shadow-lg transition hover:border-[#E7FF3C]/60 hover:text-[#E7FF3C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E7FF3C]"
+      >
+        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        <span>{isFullscreen ? 'Exit fullscreen' : 'Full screen'}</span>
+      </button>
+      {fullscreenError && (
+        <p
+          role="alert"
+          className="absolute right-3 top-14 z-[1000] rounded-lg border border-red-500/30 bg-[#171717]/95 px-3 py-2 text-xs text-red-300 shadow-lg"
+        >
+          {fullscreenError}
+        </p>
+      )}
       <MapContainer
         center={defaultCenter}
         zoom={walls.length > 0 ? 12 : 10}
         scrollWheelZoom
-        className="h-full min-h-[500px] w-full"
+        className="walltrack-dark-map h-full min-h-[500px] w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
