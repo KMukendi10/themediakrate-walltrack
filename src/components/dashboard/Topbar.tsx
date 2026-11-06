@@ -3,18 +3,41 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Menu, UserCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { LogOut, Menu, UserCircle } from 'lucide-react'
 import WorkspaceSearch from './WorkspaceSearch'
 import RecentUpdates from './RecentUpdates'
 import { NAVIGATION_TOGGLE_EVENT } from './navigation-events'
+import { createClient } from '@/lib/supabase/client'
 
 type TopbarProps = {
   email: string
 }
 
 export default function Topbar({ email }: TopbarProps) {
+  const router = useRouter()
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState('')
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement>(null)
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    setSignOutError('')
+    const supabase = createClient()
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error('Sign-out error:', error)
+      setSignOutError('Unable to sign out. Please try again.')
+      setSigningOut(false)
+      return
+    }
+
+    setAccountMenuOpen(false)
+    router.replace('/login')
+    router.refresh()
+  }
 
   function toggleNavigation() {
     window.dispatchEvent(new Event(NAVIGATION_TOGGLE_EVENT))
@@ -102,6 +125,21 @@ export default function Topbar({ email }: TopbarProps) {
               >
                 Account preferences
               </Link>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-gray-300 transition hover:bg-white/[0.07] hover:text-[#E7FF3C] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <LogOut size={16} />
+                {signingOut ? 'Signing out...' : 'Sign out'}
+              </button>
+              {signOutError && (
+                <p role="alert" className="px-3 py-2 text-xs text-red-400">
+                  {signOutError}
+                </p>
+              )}
             </div>
           )}
         </div>
