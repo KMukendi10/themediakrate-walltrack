@@ -58,6 +58,7 @@ const navigation = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [desktopExpanded, setDesktopExpanded] = useState(false)
 
   useEffect(() => {
     function toggleMobileNavigation() {
@@ -83,9 +84,27 @@ export default function Sidebar() {
         />
       )}
 
-      <div className="hidden w-20 shrink-0 md:block" aria-hidden="true" />
+      <div
+        className={`hidden shrink-0 transition-[width] duration-300 md:block ${
+          desktopExpanded ? 'md:w-64' : 'md:w-20'
+        }`}
+        aria-hidden="true"
+      />
       <aside
-        className={`walltrack-sidebar-scroll group fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-x-hidden overflow-y-auto border-r border-white/10 bg-[#171717] px-3 py-5 shadow-2xl transition-transform duration-300 ease-in-out md:w-20 md:px-2 md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out md:hover:w-64 md:focus-within:w-64 md:group-hover:delay-150 md:group-focus-within:delay-150 ${
+        onMouseEnter={() => setDesktopExpanded(true)}
+        onMouseLeave={() => setDesktopExpanded(false)}
+        onFocusCapture={() => setDesktopExpanded(true)}
+        onBlurCapture={(event) => {
+          if (
+            !(event.relatedTarget instanceof Node) ||
+            !event.currentTarget.contains(event.relatedTarget)
+          ) {
+            setDesktopExpanded(false)
+          }
+        }}
+        className={`walltrack-sidebar-scroll group fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-x-hidden overflow-y-auto border-r border-white/10 bg-[#171717] px-3 py-5 shadow-2xl transition-transform duration-300 ease-in-out md:px-2 md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out ${
+          desktopExpanded ? 'md:w-64' : 'md:w-20'
+        } ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
