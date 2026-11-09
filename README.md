@@ -35,7 +35,7 @@ The dashboard is protected by authentication, and screenshots of the current wor
 - Next.js App Router, React, and TypeScript
 - Supabase Auth, Postgres, and Storage
 - `@supabase/ssr` for browser and server session clients
-- Leaflet and React Leaflet with OpenStreetMap tiles
+- Leaflet with OpenStreetMap tiles
 - Tailwind CSS
 
 ## Architecture notes

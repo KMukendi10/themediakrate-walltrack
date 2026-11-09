@@ -3,13 +3,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Maximize2, Minimize2 } from 'lucide-react'
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMap,
-} from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -58,58 +51,13 @@ const wallIcon = L.divIcon({
   popupAnchor: [0, -34],
 })
 
-function MapController({
-  walls,
-  selectedWallId,
-}: WallMapProps) {
-  const map = useMap()
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      requestAnimationFrame(() => map.invalidateSize({ pan: false }))
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () =>
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [map])
-
-  useEffect(() => {
-    if (selectedWallId) {
-      const selectedWall = walls.find(
-        (wall) => wall.id === selectedWallId
-      )
-
-      if (selectedWall) {
-        map.flyTo(
-          [selectedWall.latitude, selectedWall.longitude],
-          16,
-          { duration: 1 }
-        )
-        return
-      }
-    }
-
-    if (walls.length > 0) {
-      const bounds = L.latLngBounds(
-        walls.map((wall) => [
-          wall.latitude,
-          wall.longitude,
-        ])
-      )
-
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
-    }
-  }, [map, walls, selectedWallId])
-
-  return null
-}
-
 export default function WallMap({
   walls,
   selectedWallId,
 }: WallMapProps) {
   const mapShellRef = useRef<HTMLDivElement>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<L.Map | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [fullscreenError, setFullscreenError] = useState('')
 
@@ -117,6 +65,7 @@ export default function WallMap({
     const handleFullscreenChange = () => {
       setIsFullscreen(document.fullscreenElement === mapShellRef.current)
       setFullscreenError('')
+      requestAnimationFrame(() => mapRef.current?.invalidateSize({ pan: false }))
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -124,10 +73,63 @@ export default function WallMap({
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
-  const defaultCenter: [number, number] =
-    walls.length > 0
-      ? [walls[0].latitude, walls[0].longitude]
-      : [-26.2041, 28.0473]
+  useEffect(() => {
+    const container = mapContainerRef.current
+    if (!container) return
+
+    const center: [number, number] =
+      walls.length > 0
+        ? [walls[0].latitude, walls[0].longitude]
+        : [-26.2041, 28.0473]
+    const map = L.map(container, { scrollWheelZoom: true }).setView(
+      center,
+      walls.length > 0 ? 12 : 10
+    )
+    mapRef.current = map
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map)
+
+    for (const wall of walls) {
+      const popup = L.DomUtil.create('div', 'min-w-[180px] text-black')
+      const code = L.DomUtil.create('p', 'text-xs font-semibold text-gray-500', popup)
+      code.textContent = wall.wall_code
+
+      const name = L.DomUtil.create('h3', 'mt-1 text-sm font-bold', popup)
+      name.textContent = wall.name
+
+      const address = L.DomUtil.create('p', 'mt-1 text-xs text-gray-600', popup)
+      address.textContent =
+        [wall.address, wall.suburb, wall.city].filter(Boolean).join(', ') ||
+        'No address recorded'
+
+      const status = L.DomUtil.create('p', 'mt-2 text-xs font-semibold', popup)
+      status.textContent = `Status: ${wall.status.replaceAll('_', ' ')}`
+
+      L.marker([wall.latitude, wall.longitude], { icon: wallIcon })
+        .addTo(map)
+        .bindPopup(popup)
+    }
+
+    const selectedWall = walls.find((wall) => wall.id === selectedWallId)
+    if (selectedWall) {
+      map.flyTo([selectedWall.latitude, selectedWall.longitude], 16, {
+        duration: 1,
+      })
+    } else if (walls.length > 0) {
+      const bounds = L.latLngBounds(
+        walls.map((wall) => [wall.latitude, wall.longitude])
+      )
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
+    }
+
+    return () => {
+      mapRef.current = null
+      map.remove()
+    }
+  }, [walls, selectedWallId])
 
   async function toggleFullscreen() {
     const mapShell = mapShellRef.current
@@ -171,52 +173,10 @@ export default function WallMap({
           {fullscreenError}
         </p>
       )}
-      <MapContainer
-        center={defaultCenter}
-        zoom={walls.length > 0 ? 12 : 10}
-        scrollWheelZoom
+      <div
+        ref={mapContainerRef}
         className="walltrack-dark-map h-full min-h-[500px] w-full"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        <MapController
-          walls={walls}
-          selectedWallId={selectedWallId}
-        />
-
-        {walls.map((wall) => (
-          <Marker
-            key={wall.id}
-            position={[wall.latitude, wall.longitude]}
-            icon={wallIcon}
-          >
-            <Popup>
-              <div className="min-w-[180px] text-black">
-                <p className="text-xs font-semibold text-gray-500">
-                  {wall.wall_code}
-                </p>
-
-                <h3 className="mt-1 text-sm font-bold">
-                  {wall.name}
-                </h3>
-
-                <p className="mt-1 text-xs text-gray-600">
-                  {[wall.address, wall.suburb, wall.city]
-                    .filter(Boolean)
-                    .join(', ') || 'No address recorded'}
-                </p>
-
-                <p className="mt-2 text-xs font-semibold">
-                  Status: {wall.status.replaceAll('_', ' ')}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      />
     </div>
   )
 }
