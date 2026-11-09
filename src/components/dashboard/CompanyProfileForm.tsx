@@ -107,7 +107,7 @@ export default function CompanyProfileForm({
                 handleChange('company_name', e.target.value)
               }
               className={inputClass}
-              placeholder="The Media Krate"
+              placeholder="Your company"
             />
           </div>
 

@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Media Krate WallTrack',
-  description: 'Internal wall management and tracking system for The Media Krate.',
+  title: 'WallTrack',
+  description: 'A prototype for managing advertising walls and field operations.',
 }
 
 export default function RootLayout({

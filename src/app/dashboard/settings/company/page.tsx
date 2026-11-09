@@ -74,7 +74,7 @@ async function CompanyProfileContent() {
                 </h1>
 
                 <p className="mt-2 text-sm text-gray-400">
-                  Manage The Media Krate&apos;s company information.
+                  Manage your company information.
                 </p>
               </div>
             </div>

@@ -1,6 +1,6 @@
-# Media Krate WallTrack
+# WallTrack
 
-WallTrack is an internal workspace for managing advertising walls, projects, inspections, inspection photos, and employee accounts. It uses a dark interface with lime accents and is built with Next.js, React, TypeScript, and Supabase.
+WallTrack is a prototype for managing advertising walls, their locations, projects, inspections, inspection photos, and employee accounts. It uses a dark interface with lime accents and is built with Next.js, React, TypeScript, and Supabase.
 
 ## Requirements
 
@@ -91,7 +91,7 @@ The notification control shows recent inspection records from the existing schem
 
 Deploy as a Node.js Next.js application and configure the three environment variables above in the hosting provider's secret/environment settings. Keep `SUPABASE_SECRET_KEY` server-only. Configure Supabase Auth redirect URLs, employee invitation email delivery, database RLS policies, and Storage policies for the deployed origins. Provide the private `wall-photos` bucket policies needed to upload images and issue signed viewing URLs.
 
-Before internal production use, verify live Supabase schema/policies and exercise sign-in, invitations, project/wall assignments, inspection uploads and rollback behavior, signed photo viewing, and employee/admin permissions in a non-production environment. No live Supabase or browser end-to-end testing is represented by the repository's automated checks.
+This project is a prototype, not a production-ready service. Before using it with real users or data, verify live Supabase schema/policies and exercise sign-in, invitations, project/wall assignments, inspection uploads and rollback behavior, signed photo viewing, and employee/admin permissions in a non-production environment. No live Supabase or browser end-to-end testing is represented by the repository's automated checks.
 
 ## Outstanding reliability work
 

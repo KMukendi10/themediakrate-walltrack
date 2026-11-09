@@ -57,7 +57,7 @@ async function AddEmployeeContent() {
             </h1>
 
             <p className="mt-2 text-sm text-gray-400">
-              Invite a new employee to the Media Krate WallTrack system.
+              Invite a new employee to WallTrack.
             </p>
           </div>
 

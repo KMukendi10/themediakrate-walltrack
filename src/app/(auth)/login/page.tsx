@@ -20,15 +20,15 @@ function LoginForm() {
       <div className="w-full max-w-md">
         <div className="mb-10 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E7FF3C] text-2xl font-black text-black">
-            MK
+            WT
           </div>
 
           <h1 className="text-3xl font-black tracking-tight text-white">
-            The Media Krate
+            WallTrack
           </h1>
 
           <p className="mt-2 text-sm tracking-[0.25em] text-[#E7FF3C]">
-            WALLTRACK
+            WALL MANAGEMENT
           </p>
         </div>
 
@@ -58,7 +58,7 @@ function LoginForm() {
                 name="email"
                 type="email"
                 required
-                placeholder="you@mediakrate.co.za"
+                placeholder="you@company.com"
                 className="w-full rounded-lg border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-[#E7FF3C]"
               />
             </div>
@@ -88,12 +88,12 @@ function LoginForm() {
           </form>
 
           <p className="mt-8 text-center text-xs text-gray-500">
-            Internal workspace · Authorised employees only
+            Prototype · Authorised accounts only
           </p>
         </div>
 
         <p className="mt-8 text-center text-xs text-gray-600">
-          © 2026 The Media Krate. All rights reserved.
+          WallTrack · Prototype
         </p>
       </div>
     </main>

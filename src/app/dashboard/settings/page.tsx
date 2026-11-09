@@ -45,7 +45,7 @@ async function SettingsContent() {
   const settings = [
     {
       title: 'Company Profile',
-      description: 'Manage The Media Krate company information.',
+      description: 'Manage your company information.',
       icon: Building2,
       href: '/dashboard/settings/company',
     },

@@ -91,14 +91,14 @@ export default function Sidebar() {
       >
         <div className="mb-9 flex h-12 items-center gap-3 px-2 md:group-hover:px-3 md:group-focus-within:px-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E7FF3C] font-black text-black">
-            MK
+            WT
           </div>
           <div className="overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-300 md:max-w-0 md:opacity-0 md:group-hover:max-w-40 md:group-hover:opacity-100 md:group-hover:delay-150 md:group-focus-within:max-w-40 md:group-focus-within:opacity-100 md:group-focus-within:delay-150">
             <h1 className="text-sm font-black tracking-wide text-white">
-              The Media Krate
+              WallTrack
             </h1>
             <p className="mt-1 text-[10px] font-semibold tracking-[0.25em] text-[#E7FF3C]">
-              WALLTRACK
+              WALL MANAGEMENT
             </p>
           </div>
           <button
@@ -160,7 +160,7 @@ export default function Sidebar() {
         </div>
 
         <p className="mt-5 hidden text-center text-[10px] text-gray-600 md:group-hover:block md:group-focus-within:block">
-          © 2026 The Media Krate
+          WallTrack · Prototype
         </p>
       </aside>
     </>
